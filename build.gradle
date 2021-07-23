@@ -1,0 +1,95 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
+
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
+    id 'com.gradle.plugin-publish' version "0.15.0"
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+}
+
+group = 'com.guardsquare'
+version = '0.1.4'
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+gradlePlugin {
+    plugins {
+        "appsweep" {
+            id = 'com.guardsquare.appsweep'
+            implementationClass = 'com.guardsquare.appsweep.gradle.AppSweepPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://guardsquare.com/appsweep-mobile-application-security-testing'
+    vcsUrl = 'https://github.com/guardsquare/appsweep-gradle'
+    description = 'Continuous Integration of app scanning using Guardsquare AppSweep.'
+    tags = ['appsweep', 'android-development', 'security-tools', 'app-testing']
+
+    plugins {
+        "appsweep" {
+            displayName = 'Guardsquare AppSweep Gradle Plugin'
+        }
+    }
+
+    mavenCoordinates {
+        groupId = 'com.guardsquare'
+        artifactId = 'appsweep-gradle'
+        version = '0.1.4'
+    }
+}
+
+def agpVersion = '4.1.0'
+
+dependencies {
+    shadow localGroovy()
+    shadow gradleApi()
+
+    implementation 'com.squareup.okhttp3:okhttp:3.14.6'
+    implementation 'com.squareup.moshi:moshi:1.12.0'
+    implementation 'com.squareup.moshi:moshi-kotlin:1.12.0'
+    implementation 'com.squareup.moshi:moshi-kotlin-codegen:1.12.0'
+
+    compileOnly("com.android.tools.build:gradle:$agpVersion")
+    testCompileOnly("com.android.tools.build:gradle:$agpVersion")
+
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.32"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.4.32"
+    testImplementation 'io.kotest:kotest-runner-junit5-jvm:4.5.0'
+    testImplementation 'io.kotest:kotest-assertions-core-jvm:4.5.0'
+    testImplementation 'io.kotest:kotest-property-jvm:4.5.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty "agp.version", agpVersion
+    systemProperty "appsweep.test", true
+}
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'com.guardsquare'
+            artifactId = 'appsweep-gradle'
+            version = '0.1.4'
+
+            from components.java
+        }
+    }
+}
+
+
+task relocateShadowJar(type: ConfigureShadowRelocation) {
+    target = tasks.shadowJar
+}
+
+tasks.shadowJar.dependsOn tasks.relocateShadowJar
