@@ -64,8 +64,12 @@ class AppSweepPlugin : Plugin<Project> {
                 calculateDependsOn = { variant -> variant.assembleProvider },
                 calculateTags = { variant, tags -> setTags(variant, tags) },
                 calculateAppToUpload = { file -> file },
-                calculateMappingFile = { null }
+                calculateMappingFile = { variant ->
+                    Paths.get(project.buildDir.absolutePath, "outputs", "mapping", variant.name, "mapping.txt")
+                    .toAbsolutePath()
+                    .toString() }
             )
+
             if (project.extensions.findByName("dexguard") != null) {
                 // depend on dexguardApk${variant.Name}, upload protected apk
                 registerTasksForVariants(project,
@@ -76,13 +80,15 @@ class AppSweepPlugin : Plugin<Project> {
                         calculateDependsOn = { variant -> "dexguardApk${variant.name.capitalize()}" },
                         calculateTags = { variant, tags -> setTags(variant, tags, "Protected") },
                         calculateAppToUpload = { file -> File(file.parentFile, "${file.nameWithoutExtension}-protected.${file.extension}") },
-                        calculateMappingFile = { variant -> Paths.get(project.buildDir.absolutePath, "outputs", "dexguard", "mapping", "apk", variant.name, "mapping.txt")
+                        calculateMappingFile = { variant ->
+                            Paths.get(project.buildDir.absolutePath, "outputs", "dexguard", "mapping", "apk", variant.name, "mapping.txt")
                                 .toAbsolutePath()
                                 .toString() }
                 )
             }
         }
     }
+
 
     /**
      * Register Tasks for all variants of this project.
