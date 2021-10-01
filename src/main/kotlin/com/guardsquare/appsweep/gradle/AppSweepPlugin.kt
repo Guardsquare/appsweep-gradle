@@ -10,8 +10,10 @@ import java.nio.file.Paths
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.reflect.TypeOf
 import org.gradle.api.tasks.TaskProvider
+import proguard.gradle.plugin.android.dsl.ProGuardAndroidExtension
 
 class AppSweepPlugin : Plugin<Project> {
 
@@ -55,83 +57,120 @@ class AppSweepPlugin : Plugin<Project> {
 
             val tasks = mutableListOf<TaskProvider<AppSweepTask>>()
 
-            // depend on assemble, upload normal apk
-            registerTasksForVariants(project,
-                extension,
-                commitHash,
-                "",
-                tasks,
-                calculateDependsOn = { variant -> variant.assembleProvider },
-                calculateTags = { variant, tags -> setTags(variant, tags) },
-                calculateAppToUpload = { file -> file },
-                calculateMappingFile = { null }
-            )
-            if (project.extensions.findByName("dexguard") != null) {
-                // depend on dexguardApk${variant.Name}, upload protected apk
-                registerTasksForVariants(project,
-                        extension,
-                        commitHash,
-                        "Protected",
-                        tasks,
-                        calculateDependsOn = { variant -> "dexguardApk${variant.name.capitalize()}" },
-                        calculateTags = { variant, tags -> setTags(variant, tags, "Protected") },
-                        calculateAppToUpload = { file -> File(file.parentFile, "${file.nameWithoutExtension}-protected.${file.extension}") },
-                        calculateMappingFile = { variant -> Paths.get(project.buildDir.absolutePath, "outputs", "dexguard", "mapping", "apk", variant.name, "mapping.txt")
-                                .toAbsolutePath()
-                                .toString() }
-                )
+            val appExtension = project.extensions.getByType(AppExtension::class.java)
+
+            appExtension.applicationVariants.all { v ->
+                // dexguard used for the variant
+                // also checks if there is a dexguard task registered for the variant
+                if (project.extensions.findByName("dexguard") != null && project.tasks.findByName("dexguardApk${v.name.capitalize()}") != null) {
+                    // depend on dexguardApk${variant.Name}, upload protected apk
+                    // upload mapping file taken from mappingDir property of the dexguard task
+                    registerTasksForVariant(project,
+                            extension,
+                            v,
+                            commitHash,
+                            tasks,
+                            calculateDependsOn = { variant -> "dexguardApk${variant.name.capitalize()}" },
+                            calculateTags = { variant, tags -> setTags(variant, tags, "Protected", "DexGuard") },
+                            calculateAppToUpload = { _ -> project.tasks.named("dexguardApk${v.name.capitalize()}").map { it.property("outputFile") }.get() as File },
+                            calculateMappingFile = { variant -> Paths.get((project.tasks.named("dexguardApk${variant.name.capitalize()}").map { it.property("mappingDir") }.get() as File).path, "mapping.txt")
+                                    .toAbsolutePath()
+                                    .toString() }
+                    )
+                }
+                // proguard used for the variant
+                // also checks if there is a configuration set for the variant
+                else if (project.extensions.findByName("proguard") != null && (project.extensions.findByName("proguard") as ProGuardAndroidExtension).configurations.any { it.name == v.name }) {
+                    // depend on the assembleProvider of the variant
+                    // at the moment the mapping directory path is hardcoded since the proguard plugin uses a transform that does not make the directory available
+                    registerTasksForVariant(project,
+                            extension,
+                            v,
+                            commitHash,
+                            tasks,
+                            calculateDependsOn = { variant -> variant.assembleProvider },
+                            calculateTags = { variant, tags -> setTags(variant, tags, "Protected", "ProGuard") },
+                            calculateAppToUpload = { file -> file },
+                            calculateMappingFile = { variant -> Paths.get(project.buildDir.absolutePath, "outputs", "proguard", variant.name, "mapping", "mapping.txt")
+                                    .toAbsolutePath()
+                                    .toString() }
+                    )
+                }
+                // R8 code optimization used
+                else if (v.buildType.isMinifyEnabled){
+                    registerTasksForVariant(project,
+                            extension,
+                            v,
+                            commitHash,
+                            tasks,
+                            calculateDependsOn = { variant -> variant.assembleProvider },
+                            calculateTags = { variant, tags -> setTags(variant, tags, "Protected", "R8") },
+                            calculateAppToUpload = { file -> file },
+                            calculateMappingFile = {variant -> ((project.tasks.named("minify${variant.name.capitalize()}WithR8").map{ it.property("mappingFile") }.get() as DefaultFilePropertyFactory.DefaultRegularFileVar).get().toString())}
+                    )
+                }
+                // no optimization/obfuscation
+                else
+                {
+                    registerTasksForVariant(project,
+                            extension,
+                            v,
+                            commitHash,
+                            tasks,
+                            calculateDependsOn = { variant -> variant.assembleProvider },
+                            calculateTags = { variant, tags -> setTags(variant, tags) },
+                            calculateAppToUpload = { file -> file },
+                            calculateMappingFile = { null }
+                    )
+                }
             }
         }
     }
 
     /**
-     * Register Tasks for all variants of this project.
+     * Register Tasks for the considered project variant.
 
      * @param project the project to create the tasks for
      * @param extension the extension to register
      * @param commitHash the commit hash indicating the current commit of the project
-     * @param taskNameSuffix the registered task `uploadToAppsweep${variantName}${taskNameAppend}`
+     * @param variant the considered agp variant
      * @param createdTasks (out) the tasks created in this call
      * @param calculateDependsOn how to calculate on which tasks the newly create one should depend
      * @param calculateTags how to calculate the tags for this tasks
      * @param calculateAppToUpload how to calculate which app to upload
      * @param calculateMappingFile how to calculate which mapping file to upload
      */
-    private fun registerTasksForVariants(
-        project: Project,
-        extension: AppSweepExtension,
-        commitHash: String?,
-        taskNameSuffix: String,
-        createdTasks: MutableList<TaskProvider<AppSweepTask>>,
-        calculateDependsOn: (ApplicationVariant) -> Any,
-        calculateTags: (ApplicationVariant, List<String>?) -> List<String>?,
-        calculateAppToUpload: (File) -> File,
-        calculateMappingFile: (ApplicationVariant) -> String?
+    private fun registerTasksForVariant(
+            project: Project,
+            extension: AppSweepExtension,
+            variant: ApplicationVariant,
+            commitHash: String?,
+            createdTasks: MutableList<TaskProvider<AppSweepTask>>,
+            calculateDependsOn: (ApplicationVariant) -> Any,
+            calculateTags: (ApplicationVariant, List<String>?) -> List<String>?,
+            calculateAppToUpload: (File) -> File,
+            calculateMappingFile: (ApplicationVariant) -> String?
     ) {
+        variant.outputs.all { output ->
+            val outputName = output.filters.joinToString("") {
+                it.identifier.capitalize()
+            } + variant.name.capitalize()
 
-        val appExtension = project.extensions.getByType(AppExtension::class.java)
-        appExtension.applicationVariants.all { variant ->
-            variant.outputs.all { output ->
-                val outputName = output.filters.joinToString("") {
-                    it.identifier.capitalize()
-                } + variant.name.capitalize() + taskNameSuffix
+            project.logger.info("Registered gradle task $APPSWEEP_TASK_NAME$outputName")
 
-                project.logger.info("Registered gradle task $APPSWEEP_TASK_NAME$outputName")
-
-                val config = parseConfigForVariant(extension, variant)
-                val task = project.tasks.register(APPSWEEP_TASK_NAME + outputName, AppSweepTask::class.java) {
-                    it.inputFile = calculateAppToUpload(output.outputFile)
-                    it.mappingFileName = calculateMappingFile(variant)
-                    it.config = config
-                    it.variant = variant
-                    it.gradleHomeDir = project.gradle.gradleUserHomeDir.absolutePath
-                    it.commitHash = commitHash
-                    it.tags = calculateTags(variant, config.tags)
-                    it.dependsOn(calculateDependsOn(variant))
-                    it.group = "AppSweep"
-                }
-                createdTasks.add(task)
+            val config = parseConfigForVariant(extension, variant)
+            val task = project.tasks.register(APPSWEEP_TASK_NAME + outputName, AppSweepTask::class.java) {
+                it.inputFile = calculateAppToUpload(output.outputFile)
+                it.mappingFileName = calculateMappingFile(variant)
+                it.config = config
+                it.variant = variant
+                it.gradleHomeDir = project.gradle.gradleUserHomeDir.absolutePath
+                it.commitHash = commitHash
+                it.tags = calculateTags(variant, config.tags)
+                it.dependsOn(calculateDependsOn(variant))
+                it.group = "AppSweep"
             }
+            createdTasks.add(task)
         }
     }
 
@@ -150,10 +189,10 @@ class AppSweepPlugin : Plugin<Project> {
         val tags = extension.configurations.findByName(variant.name)?.tags
 
         return Configuration(
-            extension.baseURL ?: DEFAULT_BASE_URL,
-            extension.apiKey ?: throw GradleException("The AppSweep configuration block should have an apiKey specified."),
-            extension.skipLibraryFile,
-            tags
+                extension.baseURL ?: DEFAULT_BASE_URL,
+                extension.apiKey ?: throw GradleException("The AppSweep configuration block should have an apiKey specified."),
+                extension.skipLibraryFile,
+                tags
         )
     }
 
