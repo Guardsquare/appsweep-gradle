@@ -3,7 +3,7 @@
   <br />
   <a href="https://guardsquare.com/appsweep-mobile-application-security-testing">
     <img
-      src="https://appsweep.guardsquare.com/assets/AppSweep-blue.svg"
+      src="https://appsweep.guardsquare.com/AppSweep-blue.svg"
       alt="AppSweep" width="400">
   </a>
 </p>
