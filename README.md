@@ -120,3 +120,5 @@ appsweep {
     commitHashCommand "hg id -i"
 }
 ```
+
+The output of the command is attached to the newly created build, and will be shown in the results to identify that specific commit.
