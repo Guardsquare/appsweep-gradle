@@ -70,10 +70,7 @@ gradle uploadToAppSweepRelease
 ```
 in the root folder of your app.
 
-Moreover, if you have DexGuard configured in your project to create a protected build of your app, additional Gradle tasks will be registered for the protected builds. For example, to upload your protected release build, run:
-```bash
-gradle uploadToAppSweepReleaseProtected
-```
+Moreover, if you have obfuscation enabled for a specific build variant, the plugin will pick up the obfuscation mapping file and upload that alongside the app.
 
 To see all available AppSweep tasks, use 
 ```bash
