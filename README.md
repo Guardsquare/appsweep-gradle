@@ -20,7 +20,7 @@
 
   <!-- Version -->
   <a href="https://plugins.gradle.org/plugin/com.guardsquare.appsweep" taget="_blank">
-    <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep?versionPrefix=0.1&versionSuffix=5">
+    <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep?versionPrefix=0.1&versionSuffix=6">
   </a>
 
 
@@ -46,7 +46,7 @@ The AppSweep plugin is published in the Gradle Public Repository, and can be eas
 
 ```Groovy
 plugins {
-  id "com.guardsquare.appsweep" version "0.1.5"
+  id "com.guardsquare.appsweep" version "0.1.6"
   // Apply other plugins here
 }
 ```
@@ -55,11 +55,7 @@ Next, you need to configure the plugin by providing an API key for your project.
 
 🚀 You can create an API key in the API Keys section of your project settings.
 
-```Groovy
-appsweep {
-    apiKey "gs_appsweep_SOME_API_KEY"
-}
-```
+This API key can then either be stored in the environment variable `APPSWEEP_API_KEY`, or by adding a <a href="#further-configuration">appsweep block</a> to your `app/build.gradle`:
 
 ## Initiate the Scan
 
@@ -79,7 +75,17 @@ gradle tasks --group=AppSweep
 
 ## Further Configuration
 
-In the `appsweep`-block in your `build.gradle(.kts)` file, you can make additional configurations.
+In the `appsweep`-block in your `app/build.gradle(.kts)` file, you can make additional configurations.
+
+### API key
+
+Instead of using the environment variable for the API key, you can also specify it in the `appsweep`-block:
+
+```Groovy
+appsweep {
+    apiKey "gs_appsweep_SOME_API_KEY"
+}
+```
 
 ### Tags
 
