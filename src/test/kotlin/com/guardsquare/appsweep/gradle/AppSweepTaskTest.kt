@@ -46,10 +46,14 @@ class AppSweepTaskTest : FreeSpec({
         }.create()
 
         "When the tasks 'clean' and 'assemble' are run" - {
-            val result = createGradleRunner(project.rootDir, testKitDir, "clean", "assemble").buildAndFail()
+            val result = createGradleRunner(project.rootDir, testKitDir, "clean", "uploadToAppSweepDebug", "--info").build()
+
+            "APPSWEEP_API_KEY environment variable must not be set for this test" {
+                System.getenv("APPSWEEP_API_KEY") shouldBe null
+            }
 
             "Then the build should fail" {
-                result.output shouldContain "The AppSweep configuration block should have an apiKey specified."
+                result.output shouldContain "No API key set"
             }
         }
     }

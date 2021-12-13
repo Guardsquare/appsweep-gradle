@@ -85,12 +85,25 @@ open class AppSweepTask : DefaultTask() {
             }
         }
 
+        val apiKey = when {
+            config.apiKey.isNotEmpty() -> {
+                config.apiKey
+            }
+            System.getenv("APPSWEEP_API_KEY") != null -> {
+                System.getenv("APPSWEEP_API_KEY")
+            }
+            else -> {
+                logger.error("No API key set. Either set the APPSWEEP_API_KEY environmant variable or apiKey in the appsweep block")
+                return
+            }
+        }
+
         // Let's skip the network interaction during tests.
         if (java.lang.Boolean.getBoolean("appsweep.test")) {
             return
         }
 
-        val service = AppSweepAPIServiceV0(config.baseURL, config.apiKey, logger)
+        val service = AppSweepAPIServiceV0(config.baseURL, apiKey, logger)
 
         val dependencyJsonId: String? = if (libraryMapping != null) {
             // Upload the library mapping file, do not show a progress for this
