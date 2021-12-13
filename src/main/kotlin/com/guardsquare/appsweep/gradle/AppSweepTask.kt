@@ -95,7 +95,8 @@ open class AppSweepTask : DefaultTask() {
         val dependencyJsonId: String? = if (libraryMapping != null) {
             // Upload the library mapping file, do not show a progress for this
             logger.lifecycle("Uploading library information.")
-            service.uploadFile(libraryMapping, false)
+            val uploadFile = service.uploadFile(libraryMapping, false) ?: return // null indicates an error
+            uploadFile
         } else {
             null
         }
@@ -114,7 +115,7 @@ open class AppSweepTask : DefaultTask() {
         }
 
         // Upload the built apk file, also showing the progress
-        val fileId = service.uploadFile(inputFile, true)
+        val fileId = service.uploadFile(inputFile, true) ?: return // null indicates an error
 
         // Create the new build with this file.
         service.createNewBuild(CreateNewBuildRequest(fileId, mappingFileId, dependencyJsonId, tags, commitHash, "gradle"))

@@ -14,6 +14,7 @@ import okio.Buffer
 import okio.BufferedSink
 import okio.source
 import org.gradle.api.logging.Logger
+import kotlin.math.log
 
 class AppSweepAPIServiceV0(
     private val baseURL: String,
@@ -23,7 +24,7 @@ class AppSweepAPIServiceV0(
     private val client = OkHttpClient()
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
 
-    override fun uploadFile(file: File, showProgress: Boolean): String {
+    override fun uploadFile(file: File, showProgress: Boolean): String? {
         val contentType = getContentTypeForFile(file)
         val requestBody = moshi.adapter(SignedURLRequest::class.java).toJson(
             SignedURLRequest(file.name, file.length(), contentType)
@@ -37,12 +38,15 @@ class AppSweepAPIServiceV0(
 
         client.newCall(signedURLRequest).execute().use { res ->
             if (!res.isSuccessful) {
-                throw IOException("Failed to get signed url: unexpected response code $res")
+                logger.error("Failed to upload file. API key possibly incorrect.")
+                return null
             }
 
-            val responseBody = res.body() ?: throw IOException("Failed to get signed url: response body was null")
-            val signedURLResponse = moshi.adapter(SignedURLResponse::class.java).fromJson(responseBody.string())
-                ?: throw IOException("Failed to parse JSON response")
+            val responseBody = res.body()
+                ?: throw IOException("Failed to get signed url: response body was null")
+            val signedURLResponse =
+                moshi.adapter(SignedURLResponse::class.java).fromJson(responseBody.string())
+                    ?: throw IOException("Failed to parse JSON response")
 
             val fileRequest = Request.Builder()
                 .url(signedURLResponse.url)

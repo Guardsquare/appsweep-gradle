@@ -190,7 +190,7 @@ class AppSweepPlugin : Plugin<Project> {
 
         return Configuration(
                 extension.baseURL ?: DEFAULT_BASE_URL,
-                extension.apiKey ?: throw GradleException("The AppSweep configuration block should have an apiKey specified."),
+                extension.apiKey ?: "",
                 extension.skipLibraryFile,
                 tags
         )
