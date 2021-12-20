@@ -20,7 +20,7 @@
 
   <!-- Version -->
   <a href="https://plugins.gradle.org/plugin/com.guardsquare.appsweep" taget="_blank">
-    <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep?versionPrefix=0.1&versionSuffix=7">
+    <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep">
   </a>
 
 
