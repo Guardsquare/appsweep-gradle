@@ -19,14 +19,14 @@
   </a>
 
   <!-- Version -->
-  <a href="https://plugins.gradle.org/plugin/com.guardsquare.appsweep" taget="_blank">
+  <a href="https://plugins.gradle.org/plugin/com.guardsquare.appsweep" target="_blank">
     <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep">
   </a>
 
 
 
   <!-- Twitter -->
-  <a href="https://twitter.com/Guardsquare" taget="_blank">
+  <a href="https://twitter.com/Guardsquare" target="_blank">
     <img src="https://img.shields.io/twitter/follow/guardsquare?style=social">
   </a>
 
