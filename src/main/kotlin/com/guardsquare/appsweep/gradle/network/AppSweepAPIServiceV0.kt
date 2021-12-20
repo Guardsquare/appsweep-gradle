@@ -1,5 +1,6 @@
 package com.guardsquare.appsweep.gradle.network
 
+import com.guardsquare.appsweep.gradle.ApiKeyException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.MediaType
@@ -38,8 +39,7 @@ class AppSweepAPIServiceV0(
 
         client.newCall(signedURLRequest).execute().use { res ->
             if (!res.isSuccessful) {
-                logger.error("Failed to upload file. API key possibly incorrect.")
-                return null
+                throw ApiKeyException("Failed to upload file. API key possibly incorrect.")
             }
 
             val responseBody = res.body

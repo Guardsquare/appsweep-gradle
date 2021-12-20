@@ -1,3 +1,6 @@
+## v0.1.7 - [2021-12-20]
+- Do not continue task if API key is invalid.
+
 ## v0.1.6 - [2021-12-13]
 - Read API-Key from environment variable (APPSWEEP_API_KEY) if not specified in the build.gradle.
 - Show a nicer error message if the API key is most likely corrupt.

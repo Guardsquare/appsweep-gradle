@@ -93,8 +93,7 @@ open class AppSweepTask : DefaultTask() {
                 System.getenv("APPSWEEP_API_KEY")
             }
             else -> {
-                logger.error("No API key set. Either set the APPSWEEP_API_KEY environmant variable or apiKey in the appsweep block")
-                return
+                throw ApiKeyException("No API key set. Either set the APPSWEEP_API_KEY environmant variable or apiKey in the appsweep block")
             }
         }
 
