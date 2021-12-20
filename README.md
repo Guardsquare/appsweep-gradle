@@ -20,7 +20,7 @@
 
   <!-- Version -->
   <a href="https://plugins.gradle.org/plugin/com.guardsquare.appsweep" taget="_blank">
-    <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep?versionPrefix=0.1&versionSuffix=6">
+    <img src="https://img.shields.io/gradle-plugin-portal/v/com.guardsquare.appsweep?versionPrefix=0.1&versionSuffix=7">
   </a>
 
 
@@ -46,7 +46,7 @@ The AppSweep plugin is published in the Gradle Public Repository, and can be eas
 
 ```Groovy
 plugins {
-  id "com.guardsquare.appsweep" version "0.1.6"
+  id "com.guardsquare.appsweep" version "0.1.7"
   // Apply other plugins here
 }
 ```
