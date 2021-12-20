@@ -2,19 +2,19 @@ package com.guardsquare.appsweep.gradle.network
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import kotlin.io.use
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okio.Buffer
 import okio.BufferedSink
 import okio.source
 import org.gradle.api.logging.Logger
-import kotlin.math.log
+import java.io.File
+import java.io.IOException
+import java.nio.file.Files
 
 class AppSweepAPIServiceV0(
     private val baseURL: String,
@@ -33,7 +33,7 @@ class AppSweepAPIServiceV0(
         val signedURLRequest = Request.Builder()
             .url("$baseURL/api/v0/files/signed-url")
             .header("Authorization", "Bearer $apiKey")
-            .post(RequestBody.create(MediaType.get("application/json"), requestBody))
+            .post(requestBody.toRequestBody("application/json".toMediaType()))
             .build()
 
         client.newCall(signedURLRequest).execute().use { res ->
@@ -42,7 +42,7 @@ class AppSweepAPIServiceV0(
                 return null
             }
 
-            val responseBody = res.body()
+            val responseBody = res.body
                 ?: throw IOException("Failed to get signed url: response body was null")
             val signedURLResponse =
                 moshi.adapter(SignedURLResponse::class.java).fromJson(responseBody.string())
@@ -51,7 +51,7 @@ class AppSweepAPIServiceV0(
             val fileRequest = Request.Builder()
                 .url(signedURLResponse.url)
                 .header("Content-Type", contentType)
-                .put(createLoggingRequestBody(MediaType.get(contentType), file, showProgress))
+                .put(createLoggingRequestBody(contentType.toMediaType(), file, showProgress))
                 .build()
 
             client.newCall(fileRequest).execute().use { uploadRes ->
@@ -70,16 +70,16 @@ class AppSweepAPIServiceV0(
         val request = Request.Builder()
             .url("$baseURL/api/v0/builds")
             .header("Authorization", "Bearer $apiKey")
-            .post(RequestBody.create(MediaType.get("application/json"), body))
+            .post(body.toRequestBody("application/json".toMediaType()))
             .build()
 
         client.newCall(request).execute().use { res ->
             if (!res.isSuccessful) {
                 throw IOException("Failed to create build: unexpected response code $res")
-            } else if (res.body() == null) {
+            } else if (res.body == null) {
                 throw IOException("Failed to create build: response is empty")
             } else {
-                val createNewBuildResponse = moshi.adapter(CreateNewBuildResponse::class.java).fromJson(res.body()!!.string())
+                val createNewBuildResponse = moshi.adapter(CreateNewBuildResponse::class.java).fromJson(res.body!!.string())
                         ?: throw IOException("Failed to parse JSON response")
                 logger.lifecycle(createNewBuildResponse.message)
                 logger.lifecycle("Your scan results will be available at ${createNewBuildResponse.details.buildUrl}")
