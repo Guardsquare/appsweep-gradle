@@ -46,16 +46,18 @@ The AppSweep plugin is published in the Gradle Public Repository, and can be eas
 
 ```Groovy
 plugins {
-  id "com.guardsquare.appsweep" version "0.1.7"
+  id "com.guardsquare.appsweep" version "latest.release"
   // Apply other plugins here
 }
 ```
+
+Note: the dynamic version `latest.release` requires at least Gradle 7. If you want to build with an older Gradle version, you need to specify a version number.
 
 Next, you need to configure the plugin by providing an API key for your project. 
 
 🚀 You can create an API key in the API Keys section of your project settings.
 
-This API key can then either be stored in the environment variable `APPSWEEP_API_KEY`, or by adding a <a href="#further-configuration">appsweep block</a> to your `app/build.gradle`:
+This API key can then either be stored in the environment variable `APPSWEEP_API_KEY`, or by adding a <a href="#further-configuration">appsweep block</a> to your `app/build.gradle`.
 
 ## Initiate the Scan
 
