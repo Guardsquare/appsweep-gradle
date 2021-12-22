@@ -1,3 +1,6 @@
+## v1.0.0 - [2021-12-22]
+- Stable release of the plugin.
+
 ## v0.1.7 - [2021-12-20]
 - Do not continue task if API key is invalid.
 
