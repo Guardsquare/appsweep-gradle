@@ -9,7 +9,7 @@ plugins {
 }
 
 group = 'com.guardsquare'
-version = '1.0.0'
+version = '1.1.0'
 
 repositories {
     google()
@@ -40,7 +40,7 @@ pluginBundle {
     mavenCoordinates {
         groupId = 'com.guardsquare'
         artifactId = 'appsweep-gradle'
-        version = '1.0.0'
+        version = '1.1.0'
     }
 }
 
@@ -81,7 +81,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.guardsquare'
             artifactId = 'appsweep-gradle'
-            version = '1.0.0'
+            version = '1.1.0'
 
             from components.java
         }

@@ -1,3 +1,6 @@
+## v1.1.0 - [2022-06-20]
+- Add support for uploading AAB builds.
+
 ## v1.0.0 - [2021-12-22]
 - Stable release of the plugin.
 
