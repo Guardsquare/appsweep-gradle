@@ -1,6 +1,6 @@
 package com.guardsquare.appsweep.gradle
 
-import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.api.BaseVariant
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AllAppDependencies
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AppDependency
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AppLibrary
@@ -42,7 +42,7 @@ open class AppSweepTask : DefaultTask() {
     lateinit var gradleHomeDir: String
 
     @get:Input
-    lateinit var variant: ApplicationVariant
+    lateinit var variant: BaseVariant
 
     @get:InputFile
     lateinit var inputFile: File
