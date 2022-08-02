@@ -3,13 +3,15 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocatio
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
-    id 'com.gradle.plugin-publish' version "0.15.0"
-    id 'com.github.johnrengelman.shadow' version '7.0.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'com.gradle.plugin-publish' version '0.21.0'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
+def pluginVersion = '1.2.0'
+
 group = 'com.guardsquare'
-version = '1.1.0'
+version = pluginVersion
 
 repositories {
     google()
@@ -40,7 +42,7 @@ pluginBundle {
     mavenCoordinates {
         groupId = 'com.guardsquare'
         artifactId = 'appsweep-gradle'
-        version = '1.1.0'
+        version = pluginVersion
     }
 }
 
@@ -59,11 +61,11 @@ dependencies {
     compileOnly("com.guardsquare:proguard-gradle:7.1.+")
     testCompileOnly("com.android.tools.build:gradle:$agpVersion")
 
-    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.32"
-    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.4.32"
-    testImplementation 'io.kotest:kotest-runner-junit5-jvm:4.5.0'
-    testImplementation 'io.kotest:kotest-assertions-core-jvm:4.5.0'
-    testImplementation 'io.kotest:kotest-property-jvm:4.5.0'
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.7.10"
+    testImplementation 'io.kotest:kotest-runner-junit5-jvm:5.3.1'
+    testImplementation 'io.kotest:kotest-assertions-core-jvm:5.3.1'
+    testImplementation 'io.kotest:kotest-property-jvm:5.3.1'
 }
 
 test {
@@ -81,7 +83,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.guardsquare'
             artifactId = 'appsweep-gradle'
-            version = '1.1.0'
+            version = pluginVersion
 
             from components.java
         }
