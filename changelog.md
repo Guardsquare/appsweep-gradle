@@ -1,3 +1,7 @@
+## v1.2.0 - [2022-08-02]
+- Add support for Android library projects (AARs).
+- Update dependencies.
+
 ## v1.1.0 - [2022-06-20]
 - Add support for uploading AAB builds.
 
