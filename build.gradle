@@ -4,8 +4,8 @@ plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'org.jetbrains.kotlin.jvm' version '1.7.10'
-    id 'com.gradle.plugin-publish' version '0.21.0'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.gradle.plugin-publish' version '0.15.0'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
 def pluginVersion = '1.2.0'
