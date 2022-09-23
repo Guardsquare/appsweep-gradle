@@ -51,7 +51,7 @@ plugins {
 }
 ```
 
-**Important:** Appsweep must run after Android and Dexguard plugins.
+**Important:** Appsweep must run after Android and Dexguard plugins, by adding the Appsweep plugin below Android and Dexguard in the plugins section.
 
 Note: the dynamic version `latest.release` requires at least Gradle 7. If you want to build with an older Gradle version, you need to specify a version number.
 
