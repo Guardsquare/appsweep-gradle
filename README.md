@@ -51,7 +51,7 @@ plugins {
 }
 ```
 
-Note: the dynamic version `latest.release` requires at least Gradle 7. If you want to build with an older Gradle version, you need to specify a version number.
+Note: the dynamic version `latest.release` requires at least Gradle 7. If you want to build with an older Gradle version, you need to specify a version number. Appsweep must run after Android and Dexguard plugins.
 
 Next, you need to configure the plugin by providing an API key for your project. 
 
