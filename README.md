@@ -59,6 +59,8 @@ Next, you need to configure the plugin by providing an API key for your project.
 
 This API key can then either be stored in the environment variable `APPSWEEP_API_KEY`, or by adding a <a href="#further-configuration">appsweep block</a> to your `app/build.gradle`.
 
+**Important:** Appsweep must run after Android and Dexguard plugins. 
+
 ## Initiate the Scan
 
 When the Gradle plugin is enabled and configured, some multiple `uploadToAppSweep*` Gradle tasks are registered.  
