@@ -1,3 +1,8 @@
+## v1.3.0 - [2022-10-11]
+- Fix bug that caused tasks not being present if DG plugin is used and not defining behavior for variants.
+- Update gradle version and dependencies.
+- Update tests to AGP 7.3.0.
+
 ## v1.2.0 - [2022-08-02]
 - Add support for Android library projects (AARs).
 - Update dependencies.

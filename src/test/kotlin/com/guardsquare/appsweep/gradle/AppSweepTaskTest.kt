@@ -26,9 +26,9 @@ class AppSweepTaskTest : FreeSpec({
                         }
 
                         android {
-                            compileSdkVersion 29
+                            compileSdkVersion 30
                             defaultConfig {
-                                targetSdkVersion 29
+                                targetSdkVersion 30
                                 minSdkVersion 14
                                 versionCode 1
                             }
@@ -46,7 +46,8 @@ class AppSweepTaskTest : FreeSpec({
         }.create()
 
         "When the tasks 'clean' and 'assemble' are run" - {
-            val result = createGradleRunner(project.rootDir, testKitDir, "clean", "uploadToAppSweepDebug", "--info").build()
+
+            val result = createGradleRunner(project.rootDir, testKitDir, "clean", "uploadToAppSweepDebug", "--info").buildAndFail()
 
             "APPSWEEP_API_KEY environment variable must not be set for this test" {
                 System.getenv("APPSWEEP_API_KEY") shouldBe null
@@ -73,9 +74,9 @@ class AppSweepTaskTest : FreeSpec({
                         apply plugin: 'com.android.application'
                         
                         android {
-                            compileSdkVersion 29
+                            compileSdkVersion 30
                             defaultConfig {
-                                targetSdkVersion 29
+                                targetSdkVersion 30
                                 minSdkVersion 14
                                 versionCode 1
                             }

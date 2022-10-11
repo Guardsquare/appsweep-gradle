@@ -140,7 +140,7 @@ private val defaultRootBuildDotGradle = """
             mavenLocal()
         }
         dependencies {
-            classpath "com.android.tools.build:gradle:${System.getProperty("agp.version")}"
+            classpath "com.android.tools.build:gradle:7.3.0"
             classpath 'com.guardsquare:appsweep-gradle:+'
         }
     }
