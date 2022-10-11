@@ -71,9 +71,10 @@ class AppSweepPlugin : Plugin<Project> {
                 var calculateBundleToUpload: (Task) -> File = { it.outputs.files.singleFile }
                 var calculateMappingFile: (Task) -> String? = { null }
 
+                val dgVariantApkTaskName = "dexguard${if (isLibrary) "Aar" else "Apk"}${v.name.capitalize()}"
                 // dexguard used for the variant
-                if (project.extensions.findByName("dexguard") != null) {
-                    variantApkTaskName = "dexguard${if (isLibrary) "Aar" else "Apk"}${v.name.capitalize()}"
+                if (project.extensions.findByName("dexguard") != null && project.tasks.any { t -> t.name.equals(dgVariantApkTaskName) }) {
+                    variantApkTaskName = dgVariantApkTaskName
                     variantBundleTaskName = "dexguardAab${v.name.capitalize()}"
                     calculateTags = { tags -> setTags(v, tags, "Protected", "DexGuard") }
                     calculateApkToUpload = { it.property("outputFile") as File }
