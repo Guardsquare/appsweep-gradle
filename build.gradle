@@ -8,7 +8,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-def pluginVersion = '1.3.0'
+def pluginVersion = '1.4.0'
 
 group = 'com.guardsquare'
 version = pluginVersion
@@ -46,7 +46,7 @@ pluginBundle {
     }
 }
 
-def agpVersion = '4.1.0'
+def agpVersion = '7.3.0'
 
 dependencies {
     shadow localGroovy()

@@ -130,3 +130,16 @@ appsweep {
 ```
 
 The output of the command is attached to the newly created build, and will be shown in the results to identify that specific commit.
+
+### Task caching
+
+By default, the upload tasks are cached and won't run if the app is unchanged.
+
+If this is not the desired behavior you can disable the caching and guarantee the creation of a new scan everytime an upload task 
+is run (Android Studio might show a warning in this case, but it can be ignored):
+```Groovy
+appsweep {
+    apiKey "gs_appsweep_SOME_API_KEY"
+    cacheTask false
+}
+```
