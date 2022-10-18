@@ -1,6 +1,7 @@
 package com.guardsquare.appsweep.gradle
 
-import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.LibraryExtension
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AllAppDependencies
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AppDependency
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AppLibrary
@@ -15,6 +16,7 @@ import java.util.regex.Pattern
 import okio.buffer
 import okio.sink
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
 import org.gradle.api.tasks.Input
@@ -42,7 +44,7 @@ open class AppSweepTask : DefaultTask() {
     lateinit var gradleHomeDir: String
 
     @get:Input
-    lateinit var variant: BaseVariant
+    lateinit var variantName: String
 
     @get:InputFile
     lateinit var inputFile: File
@@ -53,6 +55,16 @@ open class AppSweepTask : DefaultTask() {
     @TaskAction
     fun uploadFile() {
 
+        val isLibrary = project.extensions.findByName("android") is LibraryExtension
+        val variants = if (isLibrary) {
+            project.extensions.getByType(LibraryExtension::class.java).libraryVariants
+        } else {
+            project.extensions.getByType(AppExtension::class.java).applicationVariants
+        }
+        val variant = variants.first { it.name.equals(variantName) }
+            ?: throw GradleException(
+                "Variant $variantName not found"
+            )
         var libraryMapping: File? = null
 
         if (!config.skipLibraryFile) {

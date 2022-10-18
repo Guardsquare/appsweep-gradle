@@ -14,7 +14,7 @@ import proguard.gradle.plugin.android.dsl.ProGuardAndroidExtension
 
 class AppSweepPlugin : Plugin<Project> {
 
-    private var isApplied = false;
+    private var isApplied = false
 
     override fun apply(project: Project) {
         project.plugins.all {
@@ -22,7 +22,7 @@ class AppSweepPlugin : Plugin<Project> {
                 val androidExtension = project.extensions.findByName("android")
                 if (androidExtension != null) {
 
-                    isApplied = true;
+                    isApplied = true
 
                     when (androidExtension) {
                         is AppExtension -> {
@@ -65,17 +65,17 @@ class AppSweepPlugin : Plugin<Project> {
 
             variants.all { v ->
                 var variantApkTaskName = v.assembleProvider.name
-                var variantBundleTaskName = "sign${v.name.capitalize()}Bundle"
+                var variantBundleTaskName = "sign${v.name.replaceFirstChar { it.uppercaseChar() }}Bundle"
                 var calculateTags: (List<String>?) -> List<String>? = { setTags(v, it) }
                 var calculateApkToUpload: (Task) -> File = { v.outputs.first().outputFile }
                 var calculateBundleToUpload: (Task) -> File = { it.outputs.files.singleFile }
                 var calculateMappingFile: (Task) -> String? = { null }
 
-                val dgVariantApkTaskName = "dexguard${if (isLibrary) "Aar" else "Apk"}${v.name.capitalize()}"
+                val dgVariantApkTaskName = "dexguard${if (isLibrary) "Aar" else "Apk"}${v.name.replaceFirstChar { it.uppercaseChar() }}"
                 // dexguard used for the variant
                 if (project.extensions.findByName("dexguard") != null && project.tasks.any { t -> t.name.equals(dgVariantApkTaskName) }) {
                     variantApkTaskName = dgVariantApkTaskName
-                    variantBundleTaskName = "dexguardAab${v.name.capitalize()}"
+                    variantBundleTaskName = "dexguardAab${v.name.replaceFirstChar { it.uppercaseChar() }}"
                     calculateTags = { tags -> setTags(v, tags, "Protected", "DexGuard") }
                     calculateApkToUpload = { it.property("outputFile") as File }
                     calculateBundleToUpload = calculateApkToUpload
@@ -100,7 +100,7 @@ class AppSweepPlugin : Plugin<Project> {
                 else if (v.buildType.isMinifyEnabled){
                     calculateTags = { tags -> setTags(v, tags, "Protected", "R8") }
                     calculateMappingFile = {
-                        ((project.tasks.named("minify${v.name.capitalize()}WithR8").map { it.property("mappingFile") }.get() as DefaultFilePropertyFactory.DefaultRegularFileVar).get().toString())
+                        ((project.tasks.named("minify${v.name.replaceFirstChar { it.uppercaseChar() }}WithR8").map { it.property("mappingFile")!! }.get() as DefaultFilePropertyFactory.DefaultRegularFileVar).get().toString())
                     }
                 }
 
@@ -167,8 +167,8 @@ class AppSweepPlugin : Plugin<Project> {
     ) {
         variant.outputs.firstOrNull()?.let { output ->
             val outputName = output.filters.joinToString("") {
-                it.identifier.capitalize()
-            } + variant.name.capitalize() + taskSuffix
+                it.identifier.replaceFirstChar { id -> id.uppercaseChar() }
+            } + variant.name.replaceFirstChar { it.uppercaseChar() } + taskSuffix
 
             project.logger.info("Registered gradle task $APPSWEEP_TASK_NAME$outputName")
 
@@ -177,12 +177,13 @@ class AppSweepPlugin : Plugin<Project> {
                 it.inputFile = appToUpload
                 it.mappingFileName = mappingFile
                 it.config = config
-                it.variant = variant
+                it.variantName = variant.name
                 it.gradleHomeDir = project.gradle.gradleUserHomeDir.absolutePath
                 it.commitHash = commitHash
                 it.tags = calculateTags(config.tags)
                 it.dependsOn(dependsOn)
                 it.group = "AppSweep"
+                it.outputs.upToDateWhen{ config.cacheTask }
             }
             createdTasks.add(task)
         }
@@ -191,7 +192,7 @@ class AppSweepPlugin : Plugin<Project> {
     private fun setTags(variant: BaseVariant, tags: List<String>?, vararg additionalTags: String): MutableList<String> {
         val outTags = mutableListOf<String>()
         if (tags == null) {
-            outTags.add(variant.name.capitalize())
+            outTags.add(variant.name.replaceFirstChar { it.uppercaseChar() })
         } else {
             outTags.addAll(tags)
         }
@@ -206,7 +207,8 @@ class AppSweepPlugin : Plugin<Project> {
                 extension.baseURL ?: DEFAULT_BASE_URL,
                 extension.apiKey ?: "",
                 extension.skipLibraryFile,
-                tags
+                tags,
+                extension.cacheTask
         )
     }
 

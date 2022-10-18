@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Files.createTempDirectory
 import org.gradle.testkit.runner.GradleRunner
 
-const val GRADLE_VERSION = "7.4"
+const val GRADLE_VERSION = "7.5.1"
 
 fun createGradleRunner(projectDir: File, testKitDir: File, vararg arguments: String): GradleRunner =
     GradleRunner.create()
