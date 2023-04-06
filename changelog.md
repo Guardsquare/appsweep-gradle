@@ -1,3 +1,6 @@
+## v1.4.1 - [2023-04-06]
+- If run as a GitHub action, the action's commit hash `GITHUB_SHA` is automatically used.
+
 ## v1.4.0 - [2022-10-20]
 - Caching is now enabled. The task will not run if the app is unchanged. The new `cacheTask` 
   parameter can be set to false to disable this behavior and guarantee a new scan evey time the upload

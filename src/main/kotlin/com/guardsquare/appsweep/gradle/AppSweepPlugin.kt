@@ -53,7 +53,7 @@ class AppSweepPlugin : Plugin<Project> {
         // Create the Appsweep extension
         val extension = project.extensions.create(APPSWEEP_EXTENSION_NAME, AppSweepExtension::class.java, project)
         project.afterEvaluate {
-            val commitHash = getGitCommit(extension, project.rootProject)
+            val commitHash = System.getenv("GITHUB_SHA") ?: getGitCommit(extension, project.rootProject)
 
             val tasks = mutableListOf<TaskProvider<AppSweepTask>>()
 
