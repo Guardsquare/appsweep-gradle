@@ -2,15 +2,15 @@ package com.guardsquare.appsweep.gradle.dependencyanalysis
 
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.ToJson
+import org.w3c.dom.Document
+import org.w3c.dom.Node
+import org.w3c.dom.NodeList
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
-import org.w3c.dom.Document
-import org.w3c.dom.Node
-import org.w3c.dom.NodeList
 
 @JsonClass(generateAdapter = false)
 class AppLibrary(val group: String?, val name: String, val version: String?, val hash: String?) {
@@ -31,7 +31,8 @@ class AppLibrary(val group: String?, val name: String, val version: String?, val
             if (entry.name.equals("AndroidManifest.xml")) {
                 try {
                     addRClasses(zipFile, entry)
-                } catch (e: Exception) {} // it might not be a valid xml
+                } catch (e: Exception) {
+                } // it might not be a valid xml
             }
 
             when {
@@ -45,9 +46,11 @@ class AppLibrary(val group: String?, val name: String, val version: String?, val
                         innerEntry = zipInputStream.nextEntry
                     }
                 }
+
                 entry.name.endsWith(".class") -> {
                     classNames.add(entry.name)
                 }
+
                 else -> {
                     otherFileNames.add(entry.name)
                 }
@@ -110,9 +113,8 @@ class AppLibrary(val group: String?, val name: String, val version: String?, val
         if (group != other.group) return false
         if (name != other.name) return false
         if (version != other.version) return false
-        if (hash != other.hash) return false
 
-        return true
+        return hash != other.hash
     }
 
     override fun hashCode(): Int {

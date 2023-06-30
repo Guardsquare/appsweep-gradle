@@ -3,14 +3,21 @@ package com.guardsquare.appsweep.gradle
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
+import com.guardsquare.appsweep.gradle.dependencyanalysis.AppDependency
 import com.guardsquare.appsweep.gradle.dsl.AppSweepExtension
-import org.gradle.api.*
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.nio.file.Paths
+import org.gradle.api.GradleException
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.artifacts.Dependency
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
+import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
 import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.tasks.TaskProvider
 import proguard.gradle.plugin.android.dsl.ProGuardAndroidExtension
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.nio.file.Paths
 
 class AppSweepPlugin : Plugin<Project> {
 
@@ -28,12 +35,14 @@ class AppSweepPlugin : Plugin<Project> {
                         is AppExtension -> {
                             applyPluginForApp(project, false)
                         }
+
                         is LibraryExtension -> {
                             applyPluginForApp(project, true)
                         }
+
                         else -> {
                             throw GradleException(
-                                    "The Appsweep plugin can only be used on Android application or library projects."
+                                "The Appsweep plugin can only be used on Android application or library projects."
                             )
                         }
                     }
@@ -51,7 +60,11 @@ class AppSweepPlugin : Plugin<Project> {
 
     private fun applyPluginForApp(project: Project, isLibrary: Boolean) {
         // Create the Appsweep extension
-        val extension = project.extensions.create(APPSWEEP_EXTENSION_NAME, AppSweepExtension::class.java, project)
+        val extension = project.extensions.create(
+            APPSWEEP_EXTENSION_NAME,
+            AppSweepExtension::class.java,
+            project
+        )
         project.afterEvaluate {
             val commitHash = System.getenv("GITHUB_SHA") ?: getGitCommit(extension, project.rootProject)
 
@@ -72,8 +85,13 @@ class AppSweepPlugin : Plugin<Project> {
                 var calculateMappingFile: (Task) -> String? = { null }
 
                 val dgVariantApkTaskName = "dexguard${if (isLibrary) "Aar" else "Apk"}${v.name.replaceFirstChar { it.uppercaseChar() }}"
+
                 // dexguard used for the variant
-                if (project.extensions.findByName("dexguard") != null && project.tasks.any { t -> t.name.equals(dgVariantApkTaskName) }) {
+                if (project.extensions.findByName("dexguard") != null && project.tasks.any { t ->
+                        t.name.equals(
+                            dgVariantApkTaskName
+                        )
+                    }) {
                     variantApkTaskName = dgVariantApkTaskName
                     variantBundleTaskName = "dexguardAab${v.name.replaceFirstChar { it.uppercaseChar() }}"
                     calculateTags = { tags -> setTags(v, tags, "Protected", "DexGuard") }
@@ -87,20 +105,32 @@ class AppSweepPlugin : Plugin<Project> {
                 }
                 // proguard used for the variant
                 // also checks if there is a configuration set for the variant
-                else if (project.extensions.findByName("proguard") != null && (project.extensions.findByName("proguard") as ProGuardAndroidExtension).configurations.any { it.name == v.name }) {
-                    calculateTags  = { tags -> setTags(v, tags, "Protected", "ProGuard") }
+                else if (project.extensions.findByName("proguard") != null
+                    && (project.extensions.findByName("proguard") as ProGuardAndroidExtension).configurations.any { it.name == v.name })
+                {
+                    calculateTags = { tags -> setTags(v, tags, "Protected", "ProGuard") }
                     // at the moment the mapping directory path is hardcoded since the proguard plugin uses a transform that does not make the directory available
                     calculateMappingFile = {
-                        Paths.get(project.buildDir.absolutePath, "outputs", "proguard", v.name, "mapping", "mapping.txt")
+                        Paths.get(
+                            project.buildDir.absolutePath,
+                            "outputs",
+                            "proguard",
+                            v.name,
+                            "mapping",
+                            "mapping.txt"
+                        )
                             .toAbsolutePath()
                             .toString()
                     }
                 }
                 // R8 code optimization used
-                else if (v.buildType.isMinifyEnabled){
+                else if (v.buildType.isMinifyEnabled) {
                     calculateTags = { tags -> setTags(v, tags, "Protected", "R8") }
                     calculateMappingFile = {
-                        ((project.tasks.named("minify${v.name.replaceFirstChar { it.uppercaseChar() }}WithR8").map { it.property("mappingFile")!! }.get() as DefaultFilePropertyFactory.DefaultRegularFileVar).get().toString())
+                        ((project.tasks.named("minify${v.name.replaceFirstChar { it.uppercaseChar() }}WithR8")
+                            .map { it.property("mappingFile")!! }
+                            .get() as DefaultFilePropertyFactory.DefaultRegularFileVar).get()
+                            .toString())
                     }
                 }
 
@@ -172,24 +202,86 @@ class AppSweepPlugin : Plugin<Project> {
 
             project.logger.info("Registered gradle task $APPSWEEP_TASK_NAME$outputName")
 
+            val variantName = variant.name
+
+            val isLibrary = project.extensions.findByName("android") is LibraryExtension
+
+            val variants = if (isLibrary) {
+                project.extensions.getByType(LibraryExtension::class.java).libraryVariants
+            } else {
+                project.extensions.getByType(AppExtension::class.java).applicationVariants
+            }
+            val targetVariant = variants.first { it.name.equals(variantName) }
+                ?: throw GradleException(
+                    "Variant $variantName not found"
+                )
+
             val config = parseConfigForVariant(extension, variant)
-            val task = project.tasks.register(APPSWEEP_TASK_NAME + outputName, AppSweepTask::class.java) {
+            val task = project.tasks.register(
+                APPSWEEP_TASK_NAME + outputName,
+                AppSweepTask::class.java
+            ) {
                 it.inputFile = appToUpload
                 it.mappingFileName = mappingFile
                 it.config = config
-                it.variantName = variant.name
                 it.gradleHomeDir = project.gradle.gradleUserHomeDir.absolutePath
                 it.commitHash = commitHash
                 it.tags = calculateTags(config.tags)
                 it.dependsOn(dependsOn)
                 it.group = "AppSweep"
-                it.outputs.upToDateWhen{ config.cacheTask }
+                it.outputs.upToDateWhen { config.cacheTask }
+                it.projectDirAbsolutePath = project.projectDir.absolutePath
+                it.compileAndRuntimeDependencies = hashMapOf(
+                    "compile" to targetVariant.compileConfiguration.allDependencies.map { dependency ->
+                        createAppDependency(
+                            dependency = dependency,
+                            configuration = targetVariant.compileConfiguration,
+                            dependencyType = AppDependency.DependencyType.COMPILE
+                        )
+                    },
+                    "runtime" to targetVariant.runtimeConfiguration.allDependencies.map { dependency ->
+                        createAppDependency(
+                            dependency = dependency,
+                            configuration = targetVariant.runtimeConfiguration,
+                            dependencyType = AppDependency.DependencyType.RUNTIME
+                        )
+                    }
+                )
             }
             createdTasks.add(task)
         }
     }
 
-    private fun setTags(variant: BaseVariant, tags: List<String>?, vararg additionalTags: String): MutableList<String> {
+    private fun createAppDependency(
+        dependency: Dependency,
+        configuration: org.gradle.api.artifacts.Configuration,
+        dependencyType: AppDependency.DependencyType
+    ):
+            AppDependency {
+        val isDefaultExternalModuleDependency = dependency is DefaultExternalModuleDependency
+        val isDefaultSelfResolvingDependency = dependency is DefaultSelfResolvingDependency
+        return AppDependency(
+            group = dependency.group,
+            name = dependency.name,
+            specifiedVersion = dependency.version,
+            dependencyType = dependencyType,
+            isDefaultExternalModuleDependency = isDefaultExternalModuleDependency,
+            isDefaultSelfResolvingDependency = isDefaultSelfResolvingDependency,
+            files = if (isDefaultExternalModuleDependency) {
+                configuration.fileCollection(dependency).files
+            } else if (isDefaultSelfResolvingDependency) {
+                (dependency as DefaultSelfResolvingDependency).files.files
+            } else {
+                null
+            }
+        )
+    }
+
+    private fun setTags(
+        variant: BaseVariant,
+        tags: List<String>?,
+        vararg additionalTags: String
+    ): MutableList<String> {
         val outTags = mutableListOf<String>()
         if (tags == null) {
             outTags.add(variant.name.replaceFirstChar { it.uppercaseChar() })
@@ -200,15 +292,18 @@ class AppSweepPlugin : Plugin<Project> {
         return outTags
     }
 
-    private fun parseConfigForVariant(extension: AppSweepExtension, variant: BaseVariant): Configuration {
+    private fun parseConfigForVariant(
+        extension: AppSweepExtension,
+        variant: BaseVariant
+    ): Configuration {
         val tags = extension.configurations.findByName(variant.name)?.tags
 
         return Configuration(
-                extension.baseURL ?: DEFAULT_BASE_URL,
-                extension.apiKey ?: "",
-                extension.skipLibraryFile,
-                tags,
-                extension.cacheTask
+            extension.baseURL ?: DEFAULT_BASE_URL,
+            extension.apiKey ?: "",
+            extension.skipLibraryFile,
+            tags,
+            extension.cacheTask
         )
     }
 

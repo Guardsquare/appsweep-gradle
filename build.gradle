@@ -8,7 +8,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-def pluginVersion = '1.4.1'
+def pluginVersion = '1.5.0'
 
 group = 'com.guardsquare'
 version = pluginVersion
@@ -53,9 +53,9 @@ dependencies {
     shadow gradleApi()
 
     implementation 'com.squareup.okhttp3:okhttp:4.3.1'
-    implementation 'com.squareup.moshi:moshi:1.12.0'
-    implementation 'com.squareup.moshi:moshi-kotlin:1.12.0'
-    implementation 'com.squareup.moshi:moshi-kotlin-codegen:1.12.0'
+    implementation 'com.squareup.moshi:moshi:1.15.0'
+    implementation 'com.squareup.moshi:moshi-kotlin:1.15.0'
+    implementation 'com.squareup.moshi:moshi-kotlin-codegen:1.15.0'
 
     compileOnly("com.android.tools.build:gradle:$agpVersion")
     compileOnly("com.guardsquare:proguard-gradle:7.1.+")
@@ -91,7 +91,7 @@ publishing {
 }
 
 
-task relocateShadowJar(type: ConfigureShadowRelocation) {
+tasks.register('relocateShadowJar', ConfigureShadowRelocation) {
     target = tasks.shadowJar
 }
 

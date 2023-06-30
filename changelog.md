@@ -1,3 +1,7 @@
+## v1.5.0 - [2023-07-04]
+- Fix upload task failing in case of project using `org.gradle.unsafe.configuration-cache=true`.
+- Update dependencies.
+
 ## v1.4.1 - [2023-04-06]
 - If run as a GitHub action, the action's commit hash `GITHUB_SHA` is automatically used.
 

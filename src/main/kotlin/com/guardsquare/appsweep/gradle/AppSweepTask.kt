@@ -1,7 +1,5 @@
 package com.guardsquare.appsweep.gradle
 
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.LibraryExtension
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AllAppDependencies
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AppDependency
 import com.guardsquare.appsweep.gradle.dependencyanalysis.AppLibrary
@@ -10,19 +8,16 @@ import com.guardsquare.appsweep.gradle.network.CreateNewBuildRequest
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import java.io.File
-import java.io.File.createTempFile
-import java.util.regex.Pattern
 import okio.buffer
 import okio.sink
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
-import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
-import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import java.io.File
+import java.io.File.createTempFile
+import java.util.regex.Pattern
 
 val LIBRARY_PATH_PATTERN: Pattern =
     Pattern.compile(".*?(?<group>[^/]+)/(?<name>[^/]+)/(?<version>[^/]+)/(?<hash>[^/]+)/(?<filename>[^/]+)\$")
@@ -43,28 +38,21 @@ open class AppSweepTask : DefaultTask() {
     @get:Input
     lateinit var gradleHomeDir: String
 
-    @get:Input
-    lateinit var variantName: String
-
     @get:InputFile
     lateinit var inputFile: File
 
     @get:Input
     lateinit var config: Configuration
 
+    @get:Input
+    lateinit var compileAndRuntimeDependencies: HashMap<String, List<AppDependency>>
+
+    @get:Input
+    lateinit var projectDirAbsolutePath: String
+
     @TaskAction
     fun uploadFile() {
 
-        val isLibrary = project.extensions.findByName("android") is LibraryExtension
-        val variants = if (isLibrary) {
-            project.extensions.getByType(LibraryExtension::class.java).libraryVariants
-        } else {
-            project.extensions.getByType(AppExtension::class.java).applicationVariants
-        }
-        val variant = variants.first { it.name.equals(variantName) }
-            ?: throw GradleException(
-                "Variant $variantName not found"
-            )
         var libraryMapping: File? = null
 
         if (!config.skipLibraryFile) {
@@ -72,13 +60,11 @@ open class AppSweepTask : DefaultTask() {
             val allAppDependencies = AllAppDependencies(mutableSetOf(), mutableSetOf())
             addDependencies(
                 allAppDependencies,
-                variant.compileConfiguration,
-                AppDependency.DependencyType.COMPILE
+                compileAndRuntimeDependencies["compile"]!!
             )
             addDependencies(
                 allAppDependencies,
-                variant.runtimeConfiguration,
-                AppDependency.DependencyType.RUNTIME
+                compileAndRuntimeDependencies["runtime"]!!
             )
 
             val moshi = Moshi.Builder()
@@ -101,9 +87,11 @@ open class AppSweepTask : DefaultTask() {
             config.apiKey.isNotEmpty() -> {
                 config.apiKey
             }
+
             System.getenv("APPSWEEP_API_KEY") != null -> {
                 System.getenv("APPSWEEP_API_KEY")
             }
+
             else -> {
                 throw ApiKeyException("No API key set. Either set the APPSWEEP_API_KEY environmant variable or apiKey in the appsweep block")
             }
@@ -119,7 +107,8 @@ open class AppSweepTask : DefaultTask() {
         val dependencyJsonId: String? = if (libraryMapping != null) {
             // Upload the library mapping file, do not show a progress for this
             logger.lifecycle("Uploading library information.")
-            val uploadFile = service.uploadFile(libraryMapping, false) ?: return // null indicates an error
+            val uploadFile =
+                service.uploadFile(libraryMapping, false) ?: return // null indicates an error
             uploadFile
         } else {
             null
@@ -142,7 +131,16 @@ open class AppSweepTask : DefaultTask() {
         val fileId = service.uploadFile(inputFile, true) ?: return // null indicates an error
 
         // Create the new build with this file.
-        service.createNewBuild(CreateNewBuildRequest(fileId, mappingFileId, dependencyJsonId, tags, commitHash, "gradle"))
+        service.createNewBuild(
+            CreateNewBuildRequest(
+                fileId,
+                mappingFileId,
+                dependencyJsonId,
+                tags,
+                commitHash,
+                "gradle"
+            )
+        )
     }
 
     /**
@@ -150,13 +148,17 @@ open class AppSweepTask : DefaultTask() {
      */
     private fun addDependencies(
         dependencies: AllAppDependencies,
-        configuration: org.gradle.api.artifacts.Configuration,
-        dependencyType: AppDependency.DependencyType
+        allDependencies: List<AppDependency>,
     ) {
         var count = 0
-        for (dependency in configuration.allDependencies) {
-            if (dependency is DefaultExternalModuleDependency) {
-                val appDependency = AppDependency(dependency.group, dependency.name, dependency.version, dependencyType)
+        for (dependency in allDependencies) {
+            if (dependency.isDefaultExternalModuleDependency) {
+                val appDependency = AppDependency(
+                    group = dependency.group,
+                    name = dependency.name,
+                    specifiedVersion = dependency.specifiedVersion,
+                    dependencyType = dependency.dependencyType
+                )
 
                 if (dependencies.dependencies.contains(appDependency)) {
                     // skipping previously analyzed library
@@ -164,9 +166,7 @@ open class AppSweepTask : DefaultTask() {
                 }
                 count++
 
-                val fileCollection = configuration.fileCollection(dependency)
-
-                for (file in fileCollection.files) {
+                for (file in dependency.files!!) {
 
                     val pathMatcher = LIBRARY_PATH_PATTERN.matcher(file.absolutePath)
 
@@ -193,16 +193,21 @@ open class AppSweepTask : DefaultTask() {
                 appDependency.resolveVersion()
 
                 dependencies.dependencies.add(appDependency)
-            } else if (dependency is DefaultSelfResolvingDependency) { // referenced jar file
-                for (file in dependency.files.files) {
+            } else if (dependency.isDefaultSelfResolvingDependency) { // referenced jar file
+                for (file in dependency.files!!) {
 
                     // strip off project directory. The library will be referenced e.g. as `lib/somelib.jar`
                     val library = file.absolutePath.replace(
-                        project.projectDir.absolutePath + File.separator,
+                        projectDirAbsolutePath + File.separator,
                         ""
                     )
 
-                    val appDependency = AppDependency(null, library, null, dependencyType)
+                    val appDependency = AppDependency(
+                        null,
+                        library,
+                        null,
+                        dependency.dependencyType
+                    )
 
                     if (dependencies.dependencies.contains(appDependency)) {
                         // skip, if previously analyzed
@@ -218,6 +223,6 @@ open class AppSweepTask : DefaultTask() {
                 }
             }
         }
-        logger.info("Analyzed $count $dependencyType dependencies.")
+        logger.info("Analyzed $count ${allDependencies.first().dependencyType} dependencies.")
     }
 }

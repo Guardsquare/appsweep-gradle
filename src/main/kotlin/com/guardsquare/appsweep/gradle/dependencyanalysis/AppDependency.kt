@@ -1,16 +1,27 @@
 package com.guardsquare.appsweep.gradle.dependencyanalysis
 
+import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
+import java.io.File
+import java.io.Serializable
 import java.util.Objects
 
-class AppDependency(val group: String?, val name: String, val specifiedVersion: String?, val dependencyType: DependencyType) {
+class AppDependency(
+    val group: String?,
+    val name: String,
+    val specifiedVersion: String?,
+    val dependencyType: DependencyType,
+    val isDefaultExternalModuleDependency: Boolean = false,
+    val isDefaultSelfResolvingDependency: Boolean = false,
+    val files: Set<File>? = emptySet()
+) : Serializable {
     enum class DependencyType {
         COMPILE,
         RUNTIME
     }
 
     private var resolvedVersion: String? = null
-    private val referencedAppLibraries = mutableSetOf<AppLibraryReference>()
+    private var referencedAppLibraries = mutableSetOf<AppLibraryReference>()
 
     fun addReferencedAppLibraries(appLibrary: AppLibraryReference) {
         referencedAppLibraries.add(appLibrary)
@@ -44,9 +55,8 @@ class AppDependency(val group: String?, val name: String, val specifiedVersion: 
 
         if (group != other.group) return false
         if (name != other.name) return false
-        if (specifiedVersion != other.specifiedVersion) return false
 
-        return true
+        return specifiedVersion != other.specifiedVersion
     }
 
     override fun hashCode(): Int {
@@ -67,6 +77,20 @@ class AppDependency(val group: String?, val name: String, val specifiedVersion: 
                 dep.resolvedVersion,
                 dep.referencedAppLibraries.toSet()
             )
+        }
+
+        @FromJson
+        fun jsonToEvent(appDependencyJson: AppDependencyJson): AppDependency {
+            val appDependency = AppDependency(
+                group = appDependencyJson.group,
+                name = appDependencyJson.name,
+                specifiedVersion = appDependencyJson.specifiedVersion,
+                dependencyType = appDependencyJson.dependencyType
+            )
+            appDependency.resolvedVersion = appDependencyJson.resolvedVersion
+            appDependency.referencedAppLibraries = appDependencyJson.appLibraries.toMutableSet()
+
+            return appDependency
         }
     }
 }
