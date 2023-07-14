@@ -1,3 +1,7 @@
+## v1.5.1 - [2023-07-14]
+- Solve issue of protected apps and their mapping files not being uploaded properly.
+- Update Gradle version to 8.1.1.
+
 ## v1.5.0 - [2023-07-04]
 - Fix upload task failing in case of project using `org.gradle.unsafe.configuration-cache=true`.
 - Update dependencies.

@@ -13,6 +13,7 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
 import org.gradle.api.internal.file.DefaultFilePropertyFactory
+import org.gradle.api.internal.file.DefaultFilePropertyFactory.DefaultRegularFileVar
 import org.gradle.api.tasks.TaskProvider
 import proguard.gradle.plugin.android.dsl.ProGuardAndroidExtension
 import java.io.ByteArrayOutputStream
@@ -95,7 +96,7 @@ class AppSweepPlugin : Plugin<Project> {
                     variantApkTaskName = dgVariantApkTaskName
                     variantBundleTaskName = "dexguardAab${v.name.replaceFirstChar { it.uppercaseChar() }}"
                     calculateTags = { tags -> setTags(v, tags, "Protected", "DexGuard") }
-                    calculateApkToUpload = { it.property("outputFile") as File }
+                    calculateApkToUpload = { (it.property("outputFile") as DefaultRegularFileVar).get().asFile }
                     calculateBundleToUpload = calculateApkToUpload
                     calculateMappingFile = {
                         Paths.get((it.property("mappingDir") as File).path, "mapping.txt")

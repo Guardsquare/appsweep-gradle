@@ -60,11 +60,13 @@ open class AppSweepTask : DefaultTask() {
             val allAppDependencies = AllAppDependencies(mutableSetOf(), mutableSetOf())
             addDependencies(
                 allAppDependencies,
-                compileAndRuntimeDependencies["compile"]!!
+                compileAndRuntimeDependencies["compile"]!!,
+                AppDependency.DependencyType.COMPILE
             )
             addDependencies(
                 allAppDependencies,
-                compileAndRuntimeDependencies["runtime"]!!
+                compileAndRuntimeDependencies["runtime"]!!,
+                AppDependency.DependencyType.RUNTIME
             )
 
             val moshi = Moshi.Builder()
@@ -149,6 +151,7 @@ open class AppSweepTask : DefaultTask() {
     private fun addDependencies(
         dependencies: AllAppDependencies,
         allDependencies: List<AppDependency>,
+        dependencyType: AppDependency.DependencyType
     ) {
         var count = 0
         for (dependency in allDependencies) {
@@ -223,6 +226,6 @@ open class AppSweepTask : DefaultTask() {
                 }
             }
         }
-        logger.info("Analyzed $count ${allDependencies.first().dependencyType} dependencies.")
+        logger.info("Analyzed $count $dependencyType dependencies.")
     }
 }
