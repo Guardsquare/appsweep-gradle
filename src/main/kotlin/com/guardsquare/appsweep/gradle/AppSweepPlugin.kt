@@ -12,11 +12,9 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
-import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.internal.file.DefaultFilePropertyFactory.DefaultRegularFileVar
 import org.gradle.api.tasks.TaskProvider
 import proguard.gradle.plugin.android.dsl.ProGuardAndroidExtension
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Paths
 
@@ -67,7 +65,6 @@ class AppSweepPlugin : Plugin<Project> {
             project
         )
         project.afterEvaluate {
-            val commitHash = System.getenv("GITHUB_SHA") ?: getGitCommit(extension, project.rootProject)
 
             val tasks = mutableListOf<TaskProvider<AppSweepTask>>()
 
@@ -130,7 +127,7 @@ class AppSweepPlugin : Plugin<Project> {
                     calculateMappingFile = {
                         ((project.tasks.named("minify${v.name.replaceFirstChar { it.uppercaseChar() }}WithR8")
                             .map { it.property("mappingFile")!! }
-                            .get() as DefaultFilePropertyFactory.DefaultRegularFileVar).get()
+                            .get() as DefaultRegularFileVar).get()
                             .toString())
                     }
                 }
@@ -140,7 +137,6 @@ class AppSweepPlugin : Plugin<Project> {
                         project,
                         extension,
                         v,
-                        commitHash,
                         tasks,
                         dependsOn = it,
                         calculateTags = calculateTags,
@@ -156,7 +152,6 @@ class AppSweepPlugin : Plugin<Project> {
                             project,
                             extension,
                             v,
-                            commitHash,
                             tasks,
                             dependsOn = it,
                             calculateTags = calculateTags,
@@ -175,7 +170,6 @@ class AppSweepPlugin : Plugin<Project> {
 
      * @param project the project to create the tasks for
      * @param extension the extension to register
-     * @param commitHash the commit hash indicating the current commit of the project
      * @param variant the considered agp variant
      * @param createdTasks (out) the tasks created in this call
      * @param dependsOn the task on which the newly created one should depend
@@ -188,7 +182,6 @@ class AppSweepPlugin : Plugin<Project> {
         project: Project,
         extension: AppSweepExtension,
         variant: BaseVariant,
-        commitHash: String?,
         createdTasks: MutableList<TaskProvider<AppSweepTask>>,
         dependsOn: Task,
         calculateTags: (List<String>?) -> List<String>?,
@@ -226,7 +219,8 @@ class AppSweepPlugin : Plugin<Project> {
                 it.mappingFileName = mappingFile
                 it.config = config
                 it.gradleHomeDir = project.gradle.gradleUserHomeDir.absolutePath
-                it.commitHash = commitHash
+                it.addCommitHash = extension.addCommitHash
+                it.commitHashCommand = extension.commitHashCommand
                 it.tags = calculateTags(config.tags)
                 it.dependsOn(dependsOn)
                 it.group = "AppSweep"
@@ -306,31 +300,6 @@ class AppSweepPlugin : Plugin<Project> {
             tags,
             extension.cacheTask
         )
-    }
-
-    private fun getGitCommit(extension: AppSweepExtension, rootProject: Project): String? {
-        if (!extension.addCommitHash && extension.commitHashCommand.isNotEmpty()) {
-            return null
-        }
-
-        rootProject.logger.info("Getting commit hash via `{}`", extension.commitHashCommand)
-
-        val commandOutput = ByteArrayOutputStream()
-        return try {
-            val ret = rootProject.exec {
-                it.commandLine = extension.commitHashCommand.split(" ")
-                it.standardOutput = commandOutput
-            }
-            if (ret.exitValue != 0) { // e.g., command called wrongly
-                rootProject.logger.warn("Command `${extension.commitHashCommand}` returned ${ret.exitValue}")
-                null
-            } else {
-                commandOutput.toString().trim()
-            }
-        } catch (e: Exception) { // e.g. command not found / not installed
-            rootProject.logger.warn(e.message) // this prints e.g. "A problem occurred starting process 'command 'asdasdasd''"
-            null
-        }
     }
 
     companion object {

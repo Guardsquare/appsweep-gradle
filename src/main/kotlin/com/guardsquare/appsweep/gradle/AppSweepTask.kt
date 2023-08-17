@@ -15,14 +15,17 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.File.createTempFile
 import java.util.regex.Pattern
+import javax.inject.Inject
 
 val LIBRARY_PATH_PATTERN: Pattern =
     Pattern.compile(".*?(?<group>[^/]+)/(?<name>[^/]+)/(?<version>[^/]+)/(?<hash>[^/]+)/(?<filename>[^/]+)\$")
 
-open class AppSweepTask : DefaultTask() {
+abstract class AppSweepTask : DefaultTask() {
     @get:Input
     @Optional
     var tags: List<String>? = null
@@ -32,8 +35,13 @@ open class AppSweepTask : DefaultTask() {
     var mappingFileName: String? = null
 
     @get:Input
-    @Optional
-    var commitHash: String? = null
+    var addCommitHash: Boolean = false
+
+    @get:Input
+    lateinit var commitHashCommand: String
+
+    @get:Inject
+    abstract val executor: ExecOperations
 
     @get:Input
     lateinit var gradleHomeDir: String
@@ -54,6 +62,7 @@ open class AppSweepTask : DefaultTask() {
     fun uploadFile() {
 
         var libraryMapping: File? = null
+        val commitHash = getGitCommit(addCommitHash = addCommitHash, commitHashCommand = commitHashCommand)
 
         if (!config.skipLibraryFile) {
 
@@ -95,7 +104,7 @@ open class AppSweepTask : DefaultTask() {
             }
 
             else -> {
-                throw ApiKeyException("No API key set. Either set the APPSWEEP_API_KEY environmant variable or apiKey in the appsweep block")
+                throw ApiKeyException("No API key set. Either set the APPSWEEP_API_KEY environment variable or apiKey in the appsweep block")
             }
         }
 
@@ -107,7 +116,7 @@ open class AppSweepTask : DefaultTask() {
         val service = AppSweepAPIServiceV0(config.baseURL, apiKey, logger)
 
         val dependencyJsonId: String? = if (libraryMapping != null) {
-            // Upload the library mapping file, do not show a progress for this
+            // Upload the library mapping file, do not show progress for this
             logger.lifecycle("Uploading library information.")
             val uploadFile =
                 service.uploadFile(libraryMapping, false) ?: return // null indicates an error
@@ -227,5 +236,30 @@ open class AppSweepTask : DefaultTask() {
             }
         }
         logger.info("Analyzed $count $dependencyType dependencies.")
+    }
+
+    private fun getGitCommit(addCommitHash: Boolean, commitHashCommand: String): String? {
+        if (!addCommitHash && commitHashCommand.isNotEmpty()) {
+            return null
+        }
+
+        logger.info("Getting commit hash via `{}`", commitHashCommand)
+
+        val commandOutput = ByteArrayOutputStream()
+        return try {
+            val ret = executor.exec {
+                it.commandLine = commitHashCommand.split(" ")
+                it.standardOutput = commandOutput
+            }
+            if (ret.exitValue != 0) { // e.g., command called wrongly
+                logger.warn("Command `${commitHashCommand}` returned ${ret.exitValue}")
+                null
+            } else {
+                commandOutput.toString().trim()
+            }
+        } catch (e: Exception) { // e.g. command not found / not installed
+            logger.warn(e.message) // this prints e.g. "A problem occurred starting process 'command 'asdasdasd''"
+            null
+        }
     }
 }
