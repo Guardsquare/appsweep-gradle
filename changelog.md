@@ -1,3 +1,6 @@
+## v1.5.2 - [2023-08-21]
+- Fix bug when both the AppSweep and DexGuard Gradle plugins are used.
+
 ## v1.5.1 - [2023-07-14]
 - Solve issue of protected apps and their mapping files not being uploaded properly.
 - Update Gradle version to 8.1.1.

@@ -16,8 +16,10 @@ import org.gradle.api.internal.file.DefaultFilePropertyFactory.DefaultRegularFil
 import org.gradle.api.tasks.TaskProvider
 import proguard.gradle.plugin.android.dsl.ProGuardAndroidExtension
 import java.io.File
+import java.io.FileNotFoundException
 import java.nio.file.Paths
 
+@Suppress("unused")
 class AppSweepPlugin : Plugin<Project> {
 
     private var isApplied = false
@@ -93,19 +95,51 @@ class AppSweepPlugin : Plugin<Project> {
                     variantApkTaskName = dgVariantApkTaskName
                     variantBundleTaskName = "dexguardAab${v.name.replaceFirstChar { it.uppercaseChar() }}"
                     calculateTags = { tags -> setTags(v, tags, "Protected", "DexGuard") }
-                    calculateApkToUpload = { (it.property("outputFile") as DefaultRegularFileVar).get().asFile }
+                    calculateApkToUpload = {
+                        val apkPath = when(val outputFile = it.property("outputFile")) {
+                            is DefaultRegularFileVar -> {
+                                outputFile.get().asFile
+                            }
+
+                            is File -> {
+                                outputFile
+                            }
+
+                            else -> {
+                                throw FileNotFoundException("Could not find the APK to upload to AppSweep. Please contact AppSweep support or open an issue in AppSweep Gradle plugin GitHub page (https://github.com/Guardsquare/appsweep-gradle).")
+                            }
+
+                        }
+                        apkPath
+                    }
                     calculateBundleToUpload = calculateApkToUpload
                     calculateMappingFile = {
-                        Paths.get((it.property("mappingDir") as File).path, "mapping.txt")
-                            .toAbsolutePath()
-                            .toString()
+                        val mappingFilePath = when (val mappingDir = it.property("mappingDir")) {
+                            is DefaultRegularFileVar -> {
+                                mappingDir.get().asFile.path
+                            }
+
+                            is File -> {
+                                mappingDir.path
+                            }
+
+                            else -> {
+                                throw FileNotFoundException("Could not find mapping directory. Please contact AppSweep support or open an issue in AppSweep Gradle plugin GitHub page (https://github.com/Guardsquare/appsweep-gradle).")
+                            }
+                        }
+
+                        mappingFilePath.let { it1 ->
+                            Paths.get(it1, "mapping.txt")
+                                .toAbsolutePath()
+                                .toString()
+                        }
                     }
                 }
                 // proguard used for the variant
                 // also checks if there is a configuration set for the variant
                 else if (project.extensions.findByName("proguard") != null
-                    && (project.extensions.findByName("proguard") as ProGuardAndroidExtension).configurations.any { it.name == v.name })
-                {
+                    && (project.extensions.findByName("proguard") as ProGuardAndroidExtension).configurations.any { it.name == v.name }
+                ) {
                     calculateTags = { tags -> setTags(v, tags, "Protected", "ProGuard") }
                     // at the moment the mapping directory path is hardcoded since the proguard plugin uses a transform that does not make the directory available
                     calculateMappingFile = {
