@@ -106,7 +106,7 @@ class AppSweepPlugin : Plugin<Project> {
                             }
 
                             else -> {
-                                throw FileNotFoundException("Could not find the APK to upload to AppSweep. Please contact AppSweep support or open an issue in AppSweep Gradle plugin GitHub page (https://github.com/Guardsquare/appsweep-gradle).")
+                                throw FileNotFoundException("Could not find the APK (type: ${outputFile!!::class.java.typeName} to upload to AppSweep. Please contact AppSweep support or open an issue in AppSweep Gradle plugin GitHub page (https://github.com/Guardsquare/appsweep-gradle).")
                             }
 
                         }
@@ -124,7 +124,7 @@ class AppSweepPlugin : Plugin<Project> {
                             }
 
                             else -> {
-                                throw FileNotFoundException("Could not find mapping directory. Please contact AppSweep support or open an issue in AppSweep Gradle plugin GitHub page (https://github.com/Guardsquare/appsweep-gradle).")
+                                throw FileNotFoundException("Could not find mapping directory (type: ${mappingDir!!::class.java.typeName}. Please contact AppSweep support or open an issue in AppSweep Gradle plugin GitHub page (https://github.com/Guardsquare/appsweep-gradle).")
                             }
                         }
 
