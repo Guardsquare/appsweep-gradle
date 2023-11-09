@@ -31,7 +31,7 @@ class AppLibrary(val group: String?, val name: String, val version: String?, val
             if (entry.name.equals("AndroidManifest.xml")) {
                 try {
                     addRClasses(zipFile, entry)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                 } // it might not be a valid xml
             }
 
@@ -91,8 +91,8 @@ class AppLibrary(val group: String?, val name: String, val version: String?, val
                     "R\$styleable.class"
                 )
 
-                for (R in rNames) {
-                    classNames.add("$packageName/$R")
+                for (currentR in rNames) {
+                    classNames.add("$packageName/$currentR")
                 }
             }
         }
