@@ -51,12 +51,23 @@ plugins {
 }
 ```
 
-Important: Appsweep must run after Android and Dexguard plugins, by adding the Appsweep plugin below Android and Dexguard in the plugins section.
+Important: Appsweep must run after the Android and Dexguard plugins. Please add the Appsweep plugin below Android and Dexguard in the plugins section.
 
 
 Note: the dynamic version `latest.release` requires at least Gradle 7. If you want to build with an older Gradle version, you need to specify a version number.
 
 Next, you need to configure the plugin by providing an API key for your project. 
+
+### Use AppSweep in Multi-Module projects
+
+To use AppSweep Gradle plugin in a multi-module project, you need to specify the build configuration for dependent modules of your project. For example, consider the case that your project has two modules, `app` and `common-lib`. In case `app` is using `common-lib` you might have a dependency like this in `build.gradle(.kts)` file of `app` module
+```kotlin
+implementation(":common-lib")
+```
+You need to change this dependency as follows:
+```kotlin
+implementation(path: ":common-lib", configuration: "default")
+```
 
 ### Creating an API Key
 🚀 You can create an API key directly in AppSweep. To do so, you need to visit 

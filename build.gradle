@@ -3,12 +3,12 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocatio
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
     id 'com.gradle.plugin-publish' version '0.15.0'
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-def pluginVersion = '1.5.2'
+def pluginVersion = '1.6'
 
 group = 'com.guardsquare'
 version = pluginVersion
@@ -46,7 +46,7 @@ pluginBundle {
     }
 }
 
-def agpVersion = '7.3.0'
+def agpVersion = '8.1.2'
 
 dependencies {
     shadow localGroovy()
@@ -58,11 +58,10 @@ dependencies {
     implementation 'com.squareup.moshi:moshi-kotlin-codegen:1.15.0'
 
     compileOnly("com.android.tools.build:gradle:$agpVersion")
-    compileOnly("com.guardsquare:proguard-gradle:7.1.+")
     testCompileOnly("com.android.tools.build:gradle:$agpVersion")
 
-    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
-    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.7.10"
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.9.0"
     testImplementation 'io.kotest:kotest-runner-junit5-jvm:5.5.0'
     testImplementation 'io.kotest:kotest-assertions-core-jvm:5.5.0'
     testImplementation 'io.kotest:kotest-property-jvm:5.5.0'

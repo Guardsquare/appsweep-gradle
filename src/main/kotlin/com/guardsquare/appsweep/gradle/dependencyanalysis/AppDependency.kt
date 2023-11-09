@@ -2,18 +2,30 @@ package com.guardsquare.appsweep.gradle.dependencyanalysis
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
-import java.io.File
+import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import java.io.Serializable
 import java.util.Objects
 
 class AppDependency(
+    @get:Input
+    @Optional
     val group: String?,
+    @get:Input
     val name: String,
+    @get:Input
+    @Optional
     val specifiedVersion: String?,
+    @get:Input
     val dependencyType: DependencyType,
+    @get:Input
     val isDefaultExternalModuleDependency: Boolean = false,
+    @get:Input
     val isDefaultSelfResolvingDependency: Boolean = false,
-    val files: Set<File>? = emptySet()
+    @InputFiles
+    val files: FileCollection? = null
 ) : Serializable {
     enum class DependencyType {
         COMPILE,

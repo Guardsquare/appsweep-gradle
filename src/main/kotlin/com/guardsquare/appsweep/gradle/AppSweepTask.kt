@@ -13,6 +13,7 @@ import okio.sink
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
@@ -52,8 +53,8 @@ abstract class AppSweepTask : DefaultTask() {
     @get:Input
     lateinit var config: Configuration
 
-    @get:Input
-    lateinit var compileAndRuntimeDependencies: HashMap<String, List<AppDependency>>
+    @get:Nested
+    lateinit var compileAndRuntimeDependencies: Map<String, MutableList<AppDependency>>
 
     @get:Input
     lateinit var projectDirAbsolutePath: String
@@ -69,12 +70,12 @@ abstract class AppSweepTask : DefaultTask() {
             val allAppDependencies = AllAppDependencies(mutableSetOf(), mutableSetOf())
             addDependencies(
                 allAppDependencies,
-                compileAndRuntimeDependencies["compile"]!!,
+                compileAndRuntimeDependencies["COMPILE"]!!,
                 AppDependency.DependencyType.COMPILE
             )
             addDependencies(
                 allAppDependencies,
-                compileAndRuntimeDependencies["runtime"]!!,
+                compileAndRuntimeDependencies["RUNTIME"]!!,
                 AppDependency.DependencyType.RUNTIME
             )
 
