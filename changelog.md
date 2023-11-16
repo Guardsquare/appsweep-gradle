@@ -1,3 +1,10 @@
+## v1.5.4 - [2023-11-21]
+- Fix upload tasks not working in multi-module projects.
+
+## v1.5.3 - [2023-11-09]
+- Fix bug when AppSweep Gradle plugin has been used alongside DexGuard Gradle plugin in a multi-module project.
+- Adjust input of AppSweep task to comply with latest Gradle standards.
+
 ## v1.5.2 - [2023-08-21]
 - Fix bug when both the AppSweep and DexGuard Gradle plugins are used.
 

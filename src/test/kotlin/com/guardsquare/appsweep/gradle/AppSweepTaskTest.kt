@@ -26,9 +26,9 @@ class AppSweepTaskTest : FreeSpec({
                         }
 
                         android {
-                            compileSdkVersion 30
+                            compileSdkVersion 33
                             defaultConfig {
-                                targetSdkVersion 30
+                                targetSdkVersion 33
                                 minSdkVersion 14
                                 versionCode 1
                             }
@@ -74,9 +74,9 @@ class AppSweepTaskTest : FreeSpec({
                         apply plugin: 'com.android.application'
                         
                         android {
-                            compileSdkVersion 30
+                            compileSdkVersion 33
                             defaultConfig {
-                                targetSdkVersion 30
+                                targetSdkVersion 33
                                 minSdkVersion 14
                                 versionCode 1
                             }
@@ -127,7 +127,7 @@ class AppSweepTaskTest : FreeSpec({
                 result.task(":app:assembleDebug")?.outcome shouldBe SUCCESS
 
                 result.output shouldContain "Analyzed 1 COMPILE dependencies."
-                result.output shouldContain "Analyzed 1 RUNTIME dependencies."
+                result.output shouldContain "Analyzed 2 RUNTIME dependencies."
             }
 
             "Then the release and debug apks are built" {

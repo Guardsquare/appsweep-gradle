@@ -200,6 +200,28 @@ class AppSweepPlugin : Plugin<Project> {
         }
     }
 
+    private fun createCustomConfiguration(project: Project, toCopy: org.gradle.api.artifacts.Configuration): org.gradle.api.artifacts.Configuration {
+
+        var configCount = 0
+
+        while(project.configurations.findByName("customConfig${configCount}") != null) {
+            configCount++
+        }
+
+        val configurationName = "customConfig${configCount}"
+
+        val customConfiguration = project.configurations.create(configurationName)
+
+        toCopy.allDependencies.forEach {
+            if (it !is DefaultProjectDependency) {
+                customConfiguration.dependencies.add(it)
+            }
+        }
+
+        return customConfiguration
+    }
+
+
     /**
      * Register Tasks for the considered project variant.
 
@@ -262,8 +284,8 @@ class AppSweepPlugin : Plugin<Project> {
                 it.outputs.upToDateWhen { config.cacheTask }
                 it.projectDirAbsolutePath = project.projectDir.absolutePath
                 it.compileAndRuntimeDependencies = getAllDependencies(
-                    compileConfiguration = targetVariant.compileConfiguration,
-                    runtimeConfiguration = targetVariant.runtimeConfiguration
+                    compileConfiguration = createCustomConfiguration(project, targetVariant.compileConfiguration),
+                    runtimeConfiguration = createCustomConfiguration(project, targetVariant.runtimeConfiguration)
                 )
             }
             createdTasks.add(task)

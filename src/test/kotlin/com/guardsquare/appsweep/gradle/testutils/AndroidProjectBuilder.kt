@@ -164,9 +164,9 @@ private fun defaultBuildDotGradle(type: ProjectType) = """
         id 'com.guardsquare.appsweep-gradle-plugin'
     }
     android {
-        compileSdkVersion 29
+        compileSdkVersion 33
         defaultConfig {
-            targetSdkVersion 29
+            targetSdkVersion 33
             minSdkVersion 14
             versionCode 1
         }
@@ -183,9 +183,9 @@ private val defaultBaseFeatureBuildDotGradle = """
         id 'com.guardsquare.appsweep-gradle-plugin'
     }
     android {
-        compileSdkVersion 29
+        compileSdkVersion 33
         defaultConfig {
-            targetSdkVersion 29
+            targetSdkVersion 33
             minSdkVersion 14
             versionCode 1
         }
@@ -203,9 +203,9 @@ private val defaultDynamicFeatureBuildDotGradle = """
         id 'com.guardsquare.appsweep-gradle-plugin'
     }
     android {
-        compileSdkVersion 29
+        compileSdkVersion 33
         defaultConfig {
-            targetSdkVersion 29
+            targetSdkVersion 33
             minSdkVersion 14
         }
         buildTypes {
@@ -230,7 +230,8 @@ private val defaultAndroidApplicationManifest = """
                   package="com.example.app">
             <application android:label="Sample">
                 <activity android:name="MainActivity"
-                          android:label="Sample">
+                          android:label="Sample"
+                          android:exported="true">
                     <intent-filter>
                         <action   android:name="android.intent.action.MAIN"       />
                         <category android:name="android.intent.category.LAUNCHER" />
