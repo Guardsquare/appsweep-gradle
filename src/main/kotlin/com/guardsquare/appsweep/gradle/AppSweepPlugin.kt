@@ -10,6 +10,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
@@ -212,6 +213,8 @@ class AppSweepPlugin : Plugin<Project> {
 
         val customConfiguration = project.configurations.create(configurationName)
 
+        toCopy.attributes.keySet().forEach { a -> copyAttribute(a, toCopy, customConfiguration) }
+
         toCopy.allDependencies.forEach {
             if (it !is DefaultProjectDependency) {
                 customConfiguration.dependencies.add(it)
@@ -219,6 +222,14 @@ class AppSweepPlugin : Plugin<Project> {
         }
 
         return customConfiguration
+    }
+
+    private fun <T> copyAttribute(attribute: Attribute<T>,
+                                  toCopy: org.gradle.api.artifacts.Configuration,
+                                  customConfiguration: org.gradle.api.artifacts.Configuration ) {
+        customConfiguration.attributes.attribute(attribute,
+            toCopy.attributes.getAttribute(attribute)!!
+        )
     }
 
 

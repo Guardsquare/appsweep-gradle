@@ -1,3 +1,6 @@
+## v1.5.5 - [2023-11-29]
+- Fix upload tasks not working in React Native projects.
+
 ## v1.5.4 - [2023-11-21]
 - Fix upload tasks not working in multi-module projects.
 
