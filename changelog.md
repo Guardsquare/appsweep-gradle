@@ -1,3 +1,6 @@
+## v1.5.6 - [2023-11-30]
+- Do not upload mapping file for app bundles.
+
 ## v1.5.5 - [2023-11-29]
 - Fix upload tasks not working in React Native projects.
 

@@ -192,7 +192,7 @@ class AppSweepPlugin : Plugin<Project> {
                             dependsOn = it,
                             calculateTags = calculateTags,
                             appToUpload = calculateBundleToUpload(it),
-                            mappingFile = calculateMappingFile(it),
+                            mappingFile = null, // app bundles already contain the mapping file
                             taskSuffix = "Bundle"
                         )
                     }
