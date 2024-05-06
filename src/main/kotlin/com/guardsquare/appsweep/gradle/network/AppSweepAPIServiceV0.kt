@@ -17,10 +17,14 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 
+const val LOCAL_FOLDER_PATH: String  = "guardsquare/appsweep"
+const val LOCAL_FILE_BUILD_ID: String  = "lastBuildID.txt"
+
 class AppSweepAPIServiceV0(
     private val baseURL: String,
     private val apiKey: String,
-    private val logger: Logger
+    private val logger: Logger,
+    private val buildDirectory: String
 ) : AppSweepAPIService {
     private val client = OkHttpClient()
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -82,7 +86,18 @@ class AppSweepAPIServiceV0(
                 val createNewBuildResponse = moshi.adapter(CreateNewBuildResponse::class.java).fromJson(res.body!!.string())
                         ?: throw IOException("Failed to parse JSON response")
                 logger.lifecycle(createNewBuildResponse.message)
-                logger.lifecycle("Your scan results will be available at ${createNewBuildResponse.details.buildUrl}")
+
+                val localFolder = File("$buildDirectory/$LOCAL_FOLDER_PATH")
+                localFolder.mkdirs()
+
+                val localFilename = localFolder.resolve(LOCAL_FILE_BUILD_ID)
+                val buildId = createNewBuildResponse.details.buildUrl.substringAfterLast('/')
+
+                localFilename.printWriter().use { out ->
+                    out.println(buildId)
+                    logger.lifecycle("Build ID: $buildId stored in: $localFilename")
+                }
+                logger.lifecycle("\nYour scan results will be available at ${createNewBuildResponse.details.buildUrl}\n")
             }
         }
     }
@@ -112,9 +127,7 @@ class AppSweepAPIServiceV0(
                     sink.write(buf, readCount)
 
                     uploaded += readCount
-                    if (showProgress &&
-                            System.currentTimeMillis() - lastPrinted > 1000) // every second
-                    {
+                    if (showProgress && System.currentTimeMillis() - lastPrinted > 1000 /* every second */) {
                         lastPrinted = System.currentTimeMillis()
                         logger.lifecycle("Uploading app for scanning, " + percentage(uploaded) + "% uploaded (" + (uploaded / 1024) + " kB / " + (contentLength() / 1024) + " kB).")
                     }

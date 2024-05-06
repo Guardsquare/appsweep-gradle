@@ -26,7 +26,9 @@ import javax.inject.Inject
 val LIBRARY_PATH_PATTERN: Pattern =
     Pattern.compile(".*?(?<group>[^/]+)/(?<name>[^/]+)/(?<version>[^/]+)/(?<hash>[^/]+)/(?<filename>[^/]+)\$")
 
+
 abstract class AppSweepTask : DefaultTask() {
+
     @get:Input
     @Optional
     var tags: List<String>? = null
@@ -58,6 +60,9 @@ abstract class AppSweepTask : DefaultTask() {
 
     @get:Input
     lateinit var projectDirAbsolutePath: String
+
+    @get:Input
+    lateinit var projectBuildDirectory: String
 
     @TaskAction
     fun uploadFile() {
@@ -114,7 +119,7 @@ abstract class AppSweepTask : DefaultTask() {
             return
         }
 
-        val service = AppSweepAPIServiceV0(config.baseURL, apiKey, logger)
+        val service = AppSweepAPIServiceV0(config.baseURL, apiKey, logger, projectBuildDirectory)
 
         val dependencyJsonId: String? = if (libraryMapping != null) {
             // Upload the library mapping file, do not show progress for this

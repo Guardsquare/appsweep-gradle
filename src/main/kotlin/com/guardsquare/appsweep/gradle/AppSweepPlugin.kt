@@ -294,6 +294,7 @@ class AppSweepPlugin : Plugin<Project> {
                 it.group = "AppSweep"
                 it.outputs.upToDateWhen { config.cacheTask }
                 it.projectDirAbsolutePath = project.projectDir.absolutePath
+                it.projectBuildDirectory = project.layout.buildDirectory.get().asFile.absolutePath
                 it.compileAndRuntimeDependencies = getAllDependencies(
                     compileConfiguration = createCustomConfiguration(project, targetVariant.compileConfiguration),
                     runtimeConfiguration = createCustomConfiguration(project, targetVariant.runtimeConfiguration)

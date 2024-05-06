@@ -1,3 +1,6 @@
+## v1.5.7 - [2024-05-07]
+- Store lastBuildID in a local file for easier integration with tools.
+
 ## v1.5.6 - [2023-11-30]
 - Do not upload mapping file for app bundles.
 
