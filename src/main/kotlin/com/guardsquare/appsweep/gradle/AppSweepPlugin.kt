@@ -9,8 +9,11 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
@@ -137,13 +140,13 @@ class AppSweepPlugin : Plugin<Project> {
                         }
                     }
                 }
-                // proguard used for the variant
-                // also checks if there is a configuration set for the variant
+
+                // ProGuard used for the variant, also checks if there is a configuration set for the variant.
                 else if (project.extensions.findByName("proguard") != null
                     && project.gradle.taskGraph.allTasks.any { currentTask -> currentTask.name == v.name }
                 ) {
                     calculateTags = { tags -> getTagList(variantTags, tags, "Protected", "ProGuard") }
-                    // at the moment the mapping directory path is hardcoded since the proguard plugin uses a transform that does not make the directory available
+                    // at the moment the mapping directory path is hardcoded since the ProGuard plugin uses a transform that does not make the directory available.
                     calculateMappingFile = {
                         Paths.get(
                             project.layout.buildDirectory.asFile.get().absolutePath,
@@ -182,7 +185,7 @@ class AppSweepPlugin : Plugin<Project> {
                 }
 
                 if (!isLibrary) {
-                    // AABs are only relevant for applications, not libraries
+                    // AABs are only relevant for applications, not libraries.
                     project.tasks.findByName(variantBundleTaskName)?.let {
                         registerTasksForVariant(
                             project,
@@ -201,38 +204,6 @@ class AppSweepPlugin : Plugin<Project> {
         }
     }
 
-    private fun createCustomConfiguration(project: Project, toCopy: org.gradle.api.artifacts.Configuration): org.gradle.api.artifacts.Configuration {
-
-        var configCount = 0
-
-        while(project.configurations.findByName("customConfig${configCount}") != null) {
-            configCount++
-        }
-
-        val configurationName = "customConfig${configCount}"
-
-        val customConfiguration = project.configurations.create(configurationName)
-
-        toCopy.attributes.keySet().forEach { a -> copyAttribute(a, toCopy, customConfiguration) }
-
-        toCopy.allDependencies.forEach {
-            if (it !is DefaultProjectDependency) {
-                customConfiguration.dependencies.add(it)
-            }
-        }
-
-        return customConfiguration
-    }
-
-    private fun <T> copyAttribute(attribute: Attribute<T>,
-                                  toCopy: org.gradle.api.artifacts.Configuration,
-                                  customConfiguration: org.gradle.api.artifacts.Configuration ) {
-        customConfiguration.attributes.attribute(attribute,
-            toCopy.attributes.getAttribute(attribute)!!
-        )
-    }
-
-
     /**
      * Register Tasks for the considered project variant.
 
@@ -244,7 +215,7 @@ class AppSweepPlugin : Plugin<Project> {
      * @param calculateTags how to calculate the tags for this tasks
      * @param appToUpload which app file to upload
      * @param mappingFile which mapping file to upload
-     * @param taskSuffix suffix added to the task name for special cases (e.g. AABs)
+     * @param taskSuffix suffix added to the task name for special cases (e.g., AABs)
      */
     private fun registerTasksForVariant(
         project: Project,
@@ -278,30 +249,131 @@ class AppSweepPlugin : Plugin<Project> {
                     "Variant $variantName not found"
                 )
 
-            val config = parseConfigForVariant(extension, variantName)
+            val appSweepConfig = parseConfigForVariant(extension, variantName)
             val task = project.tasks.register(
                 APPSWEEP_TASK_NAME + outputName,
                 AppSweepTask::class.java
             ) {
                 it.inputFile = appToUpload
                 it.mappingFileName = mappingFile
-                it.config = config
+                it.config = appSweepConfig
                 it.gradleHomeDir = project.gradle.gradleUserHomeDir.absolutePath
                 it.addCommitHash = extension.addCommitHash
                 it.commitHashCommand = extension.commitHashCommand
-                it.tags = calculateTags(config.tags)
+                it.tags = calculateTags(appSweepConfig.tags)
                 it.dependsOn(dependsOn)
                 it.group = "AppSweep"
-                it.outputs.upToDateWhen { config.cacheTask }
+                it.outputs.upToDateWhen { appSweepConfig.cacheTask }
                 it.projectDirAbsolutePath = project.projectDir.absolutePath
                 it.projectBuildDirectory = project.layout.buildDirectory.get().asFile.absolutePath
                 it.compileAndRuntimeDependencies = getAllDependencies(
-                    compileConfiguration = createCustomConfiguration(project, targetVariant.compileConfiguration),
-                    runtimeConfiguration = createCustomConfiguration(project, targetVariant.runtimeConfiguration)
+                    compileConfiguration = getOrCreateCustomConfiguration(project, targetVariant.compileConfiguration),
+                    runtimeConfiguration = getOrCreateCustomConfiguration(project, targetVariant.runtimeConfiguration)
                 )
             }
             createdTasks.add(task)
         }
+    }
+
+    /**
+     * Check if a configuration similar to **toCopy** configuration exists such that
+     * its name start with "customConfig" return it. Otherwise, create custom configuration
+     * based on **toCopy** configuration.
+     *
+     * @param project project to create a configuration for.
+     * @param toCopy configuration to copy.
+     *
+     * @return existing or new configuration
+     */
+    private fun getOrCreateCustomConfiguration(project: Project, toCopy: org.gradle.api.artifacts.Configuration): org.gradle.api.artifacts.Configuration {
+
+        getConfig(project.configurations, toCopy)?.let { config -> return config }
+
+        val configurationName = getNewConfigName(project.configurations)
+
+        val customConfiguration = project.configurations.create(configurationName)
+        customConfiguration.description = toCopy.description
+
+        toCopy.attributes.keySet().forEach { attribute -> setAttribute(attribute, toCopy.attributes, customConfiguration.attributes) }
+
+        toCopy.allDependencies.forEach {
+            if (it !is DefaultProjectDependency) {
+                customConfiguration.dependencies.add(it)
+            }
+        }
+
+        return customConfiguration
+    }
+
+    /**
+     * Returns the configuration from `configurations` if `targetConfig` exists and its name starts with
+     * **customConfig**. If no such configuration is found, returns `null`.
+     *
+     * The prefix *customConfig* indicates that the configuration was created by the AppSweep Gradle plugin.
+     *
+     * @param configurations All configurations of the project.
+     * @param targetConfig The configuration to check for existence in **configurations**.
+     *
+     * @return The matching configuration if it exists, otherwise null.
+     */
+    private fun getConfig(configurations: ConfigurationContainer, targetConfig: org.gradle.api.artifacts.Configuration): org.gradle.api.artifacts.Configuration? {
+
+        return configurations.firstOrNull { config ->
+            config.name.startsWith("customConfig") &&
+                    config.description == targetConfig.description &&
+                    config.attributes == targetConfig.attributes &&
+                    dependenciesMatched(config.allDependencies, targetConfig.allDependencies)
+
+        }
+    }
+
+    /**
+     * Get the first available `customConfig#.` For example, if `customConfig0` and `customConfig1`
+     * are already created, this function will return `customConfig2`.
+     *
+     * @param configurations all configuration of the project.
+     *
+     * @return first available custom config
+     */
+    private fun getNewConfigName(configurations: ConfigurationContainer): String {
+
+        val configurationNumber = generateSequence(0) { num -> num + 1 }
+            .first { num -> configurations.findByName("customConfig$num") == null }
+
+        return "customConfig${configurationNumber}"
+    }
+
+    /**
+     * Checks if the dependencies in two `DependencySet` instances are the same, excluding
+     * `DefaultProjectDependency` instances.
+     *
+     * This is done by filtering out `DefaultProjectDependency` objects from the base dependencies,
+     * and then checking if all remaining dependencies are present in the target dependencies.
+     *
+     * @param baseDependencies The base set of dependencies to compare.
+     * @param targetDependencies The target set of dependencies to compare with the base set.
+     *
+     * @return `true` if the filtered dependencies in both sets are the same, otherwise `false`.
+     */
+    private fun dependenciesMatched(baseDependencies: DependencySet, targetDependencies: DependencySet): Boolean {
+        val nonDefaultProjectDependencies = baseDependencies.filterNot { it is DefaultProjectDependency }
+        return nonDefaultProjectDependencies.all { targetDependencies.contains(it) }
+    }
+
+    /**
+     * Set an attribute for custom configuration.
+     *
+     * @param attribute attribute to set in custom configuration.
+     * @param toCopyAttributes `AttributeContainer` to copy the `attribute` from it.
+     * @param customConfigAttributes `AttributeContainer` to set `attribute` for it.
+     *
+     */
+    private fun <T> setAttribute(
+        attribute: Attribute<T>,
+        toCopyAttributes: AttributeContainer,
+        customConfigAttributes: AttributeContainer,
+    ) {
+        customConfigAttributes.attribute(attribute, toCopyAttributes.getAttribute(attribute)!!)
     }
 
     private fun getAllDependencies(

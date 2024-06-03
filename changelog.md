@@ -1,3 +1,6 @@
+## v1.5.8 - [224-06-03]
+- Fix configuration ambiguity by using the same configuration for APKs and AABs.
+
 ## v1.5.7 - [2024-05-07]
 - Store lastBuildID in a local file for easier integration with tools.
 
