@@ -1,3 +1,6 @@
+## v1.5.9 - [224-06-06]
+- Fix configuration ambiguity by changing configuration similarity criteria to only consider key attributes.
+
 ## v1.5.8 - [224-06-03]
 - Fix configuration ambiguity by using the same configuration for APKs and AABs.
 

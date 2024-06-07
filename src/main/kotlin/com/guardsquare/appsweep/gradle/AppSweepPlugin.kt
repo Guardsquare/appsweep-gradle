@@ -277,11 +277,11 @@ class AppSweepPlugin : Plugin<Project> {
 
     /**
      * Check if a configuration similar to **toCopy** configuration exists such that
-     * its name start with "customConfig" return it. Otherwise, create custom configuration
+     * its name start with "customConfig", return it. Otherwise, create a custom configuration
      * based on **toCopy** configuration.
      *
      * @param project project to create a configuration for.
-     * @param toCopy configuration to copy.
+     * @param toCopy configuration to copy attributes, dependencies, and description from.
      *
      * @return existing or new configuration
      */
@@ -307,7 +307,7 @@ class AppSweepPlugin : Plugin<Project> {
 
     /**
      * Returns the configuration from `configurations` if `targetConfig` exists and its name starts with
-     * **customConfig**. If no such configuration is found, returns `null`.
+     * **customConfig**. If no such configuration exists, returns `null`.
      *
      * The prefix *customConfig* indicates that the configuration was created by the AppSweep Gradle plugin.
      *
@@ -321,7 +321,7 @@ class AppSweepPlugin : Plugin<Project> {
         return configurations.firstOrNull { config ->
             config.name.startsWith("customConfig") &&
                     config.description == targetConfig.description &&
-                    config.attributes == targetConfig.attributes &&
+                    config.attributes.keySet() == targetConfig.attributes.keySet() &&
                     dependenciesMatched(config.allDependencies, targetConfig.allDependencies)
 
         }
