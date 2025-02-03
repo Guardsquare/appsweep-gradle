@@ -1,3 +1,21 @@
+<p>
+  <br />
+  <br />
+  <br />
+  <br />
+<h2>The Gradle plugin is DEPRECATED, and superseded by the Guarsquare CLI.<br />
+Details on how to set up and use the CLI can be found in 
+<a href="https://help.guardsquare.com/en/collections/294665-integrations-automation">our documentation</a>.</h2>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</p>
+
+
 <p align="center">
   <br />
   <br />
