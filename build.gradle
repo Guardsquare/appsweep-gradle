@@ -8,7 +8,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-def pluginVersion = '1.5.9'
+def pluginVersion = '1.5.10'
 
 group = 'com.guardsquare'
 version = pluginVersion
@@ -30,7 +30,7 @@ gradlePlugin {
 pluginBundle {
     website = 'https://guardsquare.com/appsweep-mobile-application-security-testing'
     vcsUrl = 'https://github.com/guardsquare/appsweep-gradle'
-    description = 'Continuous Integration of app scanning using Guardsquare AppSweep.'
+    description = 'Scanning your app via this plugin is deprecated. Please use the Guardsquare CLI for integration of AppSweep (https://help.guardsquare.com/en/articles/161270-using-the-guardsquare-cli)'
     tags = ['appsweep', 'android-development', 'security-tools', 'app-testing']
 
     plugins {
